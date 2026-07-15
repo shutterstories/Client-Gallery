@@ -84,10 +84,14 @@
   .progress-text{font-size:12px; color:var(--ink-soft); margin-bottom:14px;}
 
   .admin-photo-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px;}
-  .admin-photo-tile{position:relative; aspect-ratio:1/1; background:var(--line); border-radius:3px; overflow:hidden;}
-  .admin-photo-tile img{width:100%; height:100%; object-fit:cover; display:block;}
+  .admin-photo-tile{position:relative; aspect-ratio:1/1; background:var(--line); border-radius:3px; overflow:hidden; cursor:grab;}
+  .admin-photo-tile img{width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;}
   .admin-photo-tile .tile-actions{position:absolute; inset:0; background:rgba(10,27,51,0); opacity:0; transition:.2s; display:flex; align-items:center; justify-content:center; gap:6px;}
   .admin-photo-tile:hover .tile-actions{background:rgba(10,27,51,0.45); opacity:1;}
+  .admin-photo-tile.selected{outline:3px solid var(--gold); outline-offset:-3px;}
+  .admin-photo-tile.drag-over{outline:3px dashed var(--navy); outline-offset:-3px;}
+  .select-checkbox{position:absolute; top:6px; left:6px; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.85); border:2px solid var(--navy); z-index:5; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--navy);}
+  .selection-bar{display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:12px; color:var(--ink-soft);}
   .mini-icon{width:28px; height:28px; border-radius:50%; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer;}
 
   .link-box{display:flex; gap:8px; align-items:center; background:var(--paper); border:1px solid var(--line); padding:10px 12px; font-size:12px; word-break:break-all;}
@@ -215,6 +219,13 @@
         <span id="cmLink">—</span>
         <button class="btn" onclick="copyClientLink()">Copy Link</button>
       </div>
+      <div class="link-box" id="cmCoverBox" style="margin-bottom:16px; display:none;">
+        <span id="cmCoverUrl">No cover photo set yet — set one below first.</span>
+        <button class="btn" id="cmCoverCopyBtn" style="display:none;" onclick="copyCoverUrl()">Copy Cover Image URL</button>
+      </div>
+      <div class="center-msg" style="font-size:11px; margin-bottom:16px; text-align:left;">
+        📎 To get a rich preview (cover photo + name) when sharing on WhatsApp: use a free tool like <a href="https://dub.co" target="_blank" style="color:var(--gold);">dub.co</a> — paste the gallery link above as the destination, and the cover image URL as the custom preview image.
+      </div>
 
       <div class="event-pill-row" id="eventPillRow"></div>
       <div style="margin-bottom:14px;">
@@ -236,7 +247,12 @@
       <div class="center-msg" id="noEventMsg" style="display:none;">↑ Type an event name above and click "+ Add Event" before uploading.</div>
       <div class="progress-text" id="progressText"></div>
 
+      <div class="selection-bar" id="selectionBar" style="display:none;">
+        <span id="selectionCount">0 selected</span>
+        <button class="btn" onclick="clearSelection()">Clear Selection</button>
+      </div>
       <div class="admin-photo-grid" id="adminPhotoGrid"></div>
+      <div class="center-msg" style="font-size:11px; padding-top:10px;">Tap the ○ on a photo to select it, tap more to select several, then drag any selected photo to reposition the whole group.</div>
     </div>
   </div>
 </div>
@@ -436,7 +452,7 @@ function openManager(folderId, clientName, eventDate){
   currentManagedFolderId = folderId;
   document.getElementById('collectionManager').style.display='block';
   document.getElementById('cmTitle').textContent = 'Manage: ' + clientName;
-  const link = WEBAPP_URL + '?gallery=' + folderId;
+  const link = location.origin + location.pathname + '?gallery=' + folderId;
   document.getElementById('cmLink').textContent = link;
   document.getElementById('collectionManager').dataset.link = link;
 
@@ -446,7 +462,29 @@ function openManager(folderId, clientName, eventDate){
     renderEventPills();
     loadAdminPhotos();
     document.getElementById('videoStatus').textContent = res.videoFileId ? 'Video uploaded ✓ (uploading a new one will replace it)' : 'No video uploaded yet.';
+    updateCoverBox(res.coverFileId);
   });
+}
+
+function updateCoverBox(coverFileId){
+  const box = document.getElementById('cmCoverBox');
+  const urlSpan = document.getElementById('cmCoverUrl');
+  const copyBtn = document.getElementById('cmCoverCopyBtn');
+  box.style.display = 'flex';
+  if(coverFileId){
+    const url = `https://drive.google.com/thumbnail?id=${coverFileId}&sz=w1200`;
+    urlSpan.textContent = url;
+    urlSpan.dataset.url = url;
+    copyBtn.style.display = 'inline-flex';
+  } else {
+    urlSpan.textContent = 'No cover photo set yet — click ★ on a photo below first.';
+    copyBtn.style.display = 'none';
+  }
+}
+
+function copyCoverUrl(){
+  const url = document.getElementById('cmCoverUrl').dataset.url;
+  if(url) navigator.clipboard.writeText(url).then(()=> alert('Cover image URL copied!'));
 }
 
 function handleVideoUpload(file){
@@ -517,6 +555,7 @@ function addEventType(){
 }
 
 let currentAdminPhotos = [];
+let selectedPhotoIds = new Set();
 
 function loadAdminPhotos(){
   const grid = document.getElementById('adminPhotoGrid');
@@ -525,38 +564,106 @@ function loadAdminPhotos(){
   api({action:'listPhotos', folderId:currentManagedFolderId, eventType:currentManagedEventType, resolution:'compressed'}).then(res=>{
     if(!res.success){ grid.innerHTML=''; return; }
     currentAdminPhotos = res.photos;
+    selectedPhotoIds = new Set();
     renderAdminPhotoGrid();
   });
 }
 
+function toggleSelect(id, event){
+  event.stopPropagation();
+  if(selectedPhotoIds.has(id)) selectedPhotoIds.delete(id);
+  else selectedPhotoIds.add(id);
+  renderAdminPhotoGrid();
+}
+
+function clearSelection(){
+  selectedPhotoIds = new Set();
+  renderAdminPhotoGrid();
+}
+
 function renderAdminPhotoGrid(){
   const grid = document.getElementById('adminPhotoGrid');
+  const bar = document.getElementById('selectionBar');
+  if(selectedPhotoIds.size > 0){
+    bar.style.display = 'flex';
+    document.getElementById('selectionCount').textContent = selectedPhotoIds.size + ' selected — drag any highlighted photo to move the group';
+  } else {
+    bar.style.display = 'none';
+  }
+
   grid.innerHTML = currentAdminPhotos.map((p,i) => `
-    <div class="admin-photo-tile">
+    <div class="admin-photo-tile ${selectedPhotoIds.has(p.id)?'selected':''}"
+         draggable="true"
+         data-index="${i}"
+         ondragstart="onDragStart(event, ${i})"
+         ondragover="onDragOver(event, ${i})"
+         ondragleave="onDragLeave(event)"
+         ondrop="onDrop(event, ${i})"
+         ondragend="onDragEnd(event)">
+      <div class="select-checkbox" onclick="toggleSelect('${p.id}', event)">${selectedPhotoIds.has(p.id)?'✓':''}</div>
       <img src="${p.viewUrl}" loading="lazy">
       <div class="tile-actions">
-        <div class="mini-icon" title="Move left" onclick="movePhoto(${i},-1)">◀</div>
         <div class="mini-icon" title="Set as cover" onclick="setCover('${p.id}')">★</div>
         <div class="mini-icon" title="Delete" onclick="deletePhoto('${p.id}')">✕</div>
-        <div class="mini-icon" title="Move right" onclick="movePhoto(${i},1)">▶</div>
       </div>
     </div>`).join('');
 }
 
-function movePhoto(index, direction){
-  const newIndex = index + direction;
-  if(newIndex < 0 || newIndex >= currentAdminPhotos.length) return;
-  const temp = currentAdminPhotos[index];
-  currentAdminPhotos[index] = currentAdminPhotos[newIndex];
-  currentAdminPhotos[newIndex] = temp;
+function onDragStart(event, index){
+  const draggedId = currentAdminPhotos[index].id;
+  if(!selectedPhotoIds.has(draggedId)){
+    selectedPhotoIds = new Set([draggedId]);
+    renderAdminPhotoGrid();
+  }
+  event.dataTransfer.setData('text/plain', String(index));
+  event.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(event, index){
+  event.preventDefault();
+  event.currentTarget.classList.add('drag-over');
+}
+
+function onDragLeave(event){
+  event.currentTarget.classList.remove('drag-over');
+}
+
+function onDragEnd(event){
+  document.querySelectorAll('.admin-photo-tile').forEach(t=>t.classList.remove('drag-over'));
+}
+
+function onDrop(event, targetIndex){
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag-over');
+
+  const movingIds = selectedPhotoIds;
+  const moving = currentAdminPhotos.filter(p => movingIds.has(p.id));
+  const staying = currentAdminPhotos.filter(p => !movingIds.has(p.id));
+
+  const targetPhoto = currentAdminPhotos[targetIndex];
+  let insertAt = staying.findIndex(p => p.id === targetPhoto.id);
+  if(insertAt === -1) insertAt = staying.length;
+  else if(movingIds.has(targetPhoto.id)) {
+    // dropped on a selected photo itself; insert at its original position among staying items
+    insertAt = staying.length;
+  }
+
+  const reordered = [...staying.slice(0, insertAt), ...moving, ...staying.slice(insertAt)];
+  currentAdminPhotos = reordered;
   renderAdminPhotoGrid();
+
   const orderedNames = currentAdminPhotos.map(p=>p.name);
   api({action:'reorderPhotos', password:adminPassword, folderId:currentManagedFolderId, eventType:currentManagedEventType, orderedNames});
 }
 
 function setCover(fileId){
   api({action:'setCover', password:adminPassword, folderId:currentManagedFolderId, fileId}).then(res=>{
-    if(res.success) alert('Cover photo updated.'); else alert('Error setting cover.');
+    if(res.success){
+      alert('Cover photo updated.');
+      updateCoverBox(fileId);
+    } else {
+      alert('Error setting cover.');
+    }
   });
 }
 
