@@ -8,375 +8,615 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy:#0A1B33;
-    --navy-2:#122A4D;
-    --gold:#C6A15B;
-    --gold-soft:#E7D3A1;
-    --paper:#F7F3EA;
-    --paper-2:#FFFFFF;
-    --ink:#1E2233;
-    --ink-soft:#5B6072;
-    --line:#E4DCC8;
+    --navy:#0A1B33; --navy-2:#122A4D; --gold:#C6A15B; --gold-soft:#E7D3A1;
+    --paper:#F7F3EA; --paper-2:#FFFFFF; --ink:#1E2233; --ink-soft:#5B6072; --line:#E4DCC8;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
-  body{
-    background:var(--paper);
-    color:var(--ink);
-    font-family:'Poppins', sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
+  body{background:var(--paper); color:var(--ink); font-family:'Poppins', sans-serif; -webkit-font-smoothing:antialiased;}
   a{color:inherit; text-decoration:none;}
+  button{font-family:'Poppins';}
 
-  /* ---------- NAV ---------- */
-  .topbar{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:22px 5vw;
-    background:var(--paper-2);
-    border-bottom:1px solid var(--line);
-    position:sticky; top:0; z-index:50;
-  }
-  .brand{
-    font-family:'Cormorant Garamond', serif;
-    font-size:22px; letter-spacing:2px; font-weight:600;
-    color:var(--navy);
-  }
-  .nav-links{display:flex; gap:28px; font-size:13px; letter-spacing:1px; color:var(--ink-soft);}
-  .nav-links a:hover{color:var(--gold);}
-
-  /* ---------- VIEW SWITCHER (for this demo only) ---------- */
-  .view-switch{
-    display:flex; justify-content:center; gap:10px;
-    padding:14px; background:var(--navy); flex-wrap:wrap;
-  }
-  .view-switch button{
-    font-family:'Poppins'; font-size:12px; letter-spacing:1px;
-    background:transparent; border:1px solid rgba(230,211,161,0.4);
-    color:var(--gold-soft); padding:8px 16px; border-radius:30px;
-    cursor:pointer; transition:all .25s;
-  }
-  .view-switch button.active, .view-switch button:hover{
-    background:var(--gold); color:var(--navy); border-color:var(--gold);
-  }
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:20px 5vw; background:var(--paper-2); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:50;}
+  .brand{font-family:'Cormorant Garamond', serif; font-size:22px; letter-spacing:2px; font-weight:600; color:var(--navy); cursor:pointer;}
+  .nav-links{display:flex; gap:22px; font-size:12px; letter-spacing:1px; color:var(--ink-soft);}
+  .nav-links span{cursor:pointer;}
+  .nav-links span:hover{color:var(--gold);}
 
   .page{display:none;}
   .page.active{display:block;}
+  .center-msg{text-align:center; padding:80px 20px; color:var(--ink-soft); font-size:13px; letter-spacing:1px;}
 
-  /* ================= HOMEPAGE ================= */
-  .home-hero{
-    padding:90px 6vw 70px;
-    text-align:center;
-    background:radial-gradient(circle at top, var(--navy-2), var(--navy));
-    color:var(--paper-2);
-  }
-  .avatar{
-    width:96px; height:96px; border-radius:50%;
-    margin:0 auto 24px;
-    background:linear-gradient(135deg,#2b3a5c,#0A1B33);
-    border:2px solid var(--gold);
-    display:flex; align-items:center; justify-content:center;
-    font-family:'Cormorant Garamond'; font-size:34px; color:var(--gold-soft);
-  }
-  .home-hero h1{
-    font-family:'Cormorant Garamond', serif;
-    font-size:clamp(32px,5vw,52px);
-    letter-spacing:4px; font-weight:600;
-  }
-  .home-hero .tagline{
-    margin-top:10px; color:var(--gold-soft); font-size:13px;
-    letter-spacing:3px; text-transform:uppercase;
-  }
-  .contact-row{
-    margin-top:34px; display:flex; justify-content:center; gap:30px;
-    flex-wrap:wrap; font-size:13px; color:#cdd6e6;
-  }
-  .contact-row span{display:flex; align-items:center; gap:8px;}
-  .dot-strip{
-    height:8px;
-    background-repeat:repeat-x; background-size:16px 8px;
-    background-image:repeating-linear-gradient(90deg, var(--gold) 0 8px, transparent 8px 16px);
-  }
-
-  .cat-filter{
-    display:flex; justify-content:center; gap:36px;
-    padding:34px 5vw 10px; flex-wrap:wrap;
-  }
-  .cat-filter button{
-    background:none; border:none; font-family:'Poppins'; font-size:14px;
-    letter-spacing:1px; color:var(--ink-soft); padding-bottom:10px;
-    border-bottom:2px solid transparent; cursor:pointer;
-  }
+  /* ===== HOMEPAGE ===== */
+  .home-hero{padding:80px 6vw 60px; text-align:center; background:radial-gradient(circle at top, var(--navy-2), var(--navy)); color:var(--paper-2);}
+  .avatar{width:88px; height:88px; border-radius:50%; margin:0 auto 20px; background:linear-gradient(135deg,#2b3a5c,#0A1B33); border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond'; font-size:30px; color:var(--gold-soft);}
+  .home-hero h1{font-family:'Cormorant Garamond', serif; font-size:clamp(28px,5vw,46px); letter-spacing:3px; font-weight:600;}
+  .home-hero .tagline{margin-top:8px; color:var(--gold-soft); font-size:12px; letter-spacing:3px; text-transform:uppercase;}
+  .dot-strip{height:8px; background-image:repeating-linear-gradient(90deg, var(--gold) 0 8px, transparent 8px 16px);}
+  .cat-filter{display:flex; justify-content:center; gap:30px; padding:30px 5vw 10px; flex-wrap:wrap;}
+  .cat-filter button{background:none; border:none; font-size:13px; letter-spacing:1px; color:var(--ink-soft); padding-bottom:10px; border-bottom:2px solid transparent; cursor:pointer;}
   .cat-filter button.active{color:var(--navy); border-color:var(--gold); font-weight:600;}
-
-  .collections-grid{
-    display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-    gap:26px; padding:20px 5vw 80px;
-  }
-  .collection-card{
-    background:var(--paper-2); border:1px solid var(--line);
-    border-radius:4px; overflow:hidden;
-    transition:transform .3s ease, box-shadow .3s ease;
-  }
+  .collections-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:24px; padding:20px 5vw 80px;}
+  .collection-card{background:var(--paper-2); border:1px solid var(--line); border-radius:4px; overflow:hidden; cursor:pointer; transition:transform .3s, box-shadow .3s;}
   .collection-card:hover{transform:translateY(-4px); box-shadow:0 16px 32px rgba(10,27,51,0.12);}
-  .collection-cover{
-    height:220px; position:relative;
-    background:linear-gradient(160deg,#d9c9a3,#b9895a);
-    display:flex; align-items:flex-end;
-  }
-  .collection-cover .tag{
-    position:absolute; top:14px; left:14px;
-    background:rgba(10,27,51,0.7); color:var(--gold-soft);
-    font-size:10px; letter-spacing:1.5px; padding:5px 10px; border-radius:20px;
-  }
-  .collection-cover::after{
-    content:''; position:absolute; inset:0;
-    background:linear-gradient(180deg, transparent 40%, rgba(10,27,51,0.75) 100%);
-  }
-  .collection-info{padding:18px 20px 22px;}
-  .collection-info h3{
-    font-family:'Cormorant Garamond'; font-size:22px; color:var(--navy); font-weight:600;
-  }
-  .collection-info p{font-size:12px; color:var(--ink-soft); margin-top:4px; letter-spacing:.5px;}
+  .collection-cover{height:200px; position:relative; background:linear-gradient(160deg,#d9c9a3,#b9895a) center/cover; display:flex; align-items:flex-end;}
+  .collection-cover .tag{position:absolute; top:12px; left:12px; background:rgba(10,27,51,0.7); color:var(--gold-soft); font-size:10px; letter-spacing:1.5px; padding:5px 10px; border-radius:20px;}
+  .collection-info{padding:16px 18px 20px;}
+  .collection-info h3{font-family:'Cormorant Garamond'; font-size:20px; color:var(--navy); font-weight:600;}
+  .collection-info p{font-size:11px; color:var(--ink-soft); margin-top:4px; letter-spacing:.5px;}
 
-  /* ================= CLIENT GALLERY PAGE ================= */
-  .g-cover{
-    position:relative; height:56vh; min-height:360px;
-    background:linear-gradient(160deg,#d9c9a3,#b9895a);
-    display:flex; align-items:flex-end; padding:0 6vw 46px;
-    color:var(--paper-2);
-  }
-  .g-cover::after{
-    content:''; position:absolute; inset:0;
-    background:linear-gradient(180deg, rgba(10,27,51,0.15) 0%, rgba(10,27,51,0.85) 100%);
-  }
-  .g-cover-content{position:relative; z-index:2;}
-  .g-cover .eyebrow{font-size:12px; letter-spacing:3px; color:var(--gold-soft); margin-bottom:10px;}
-  .g-cover h1{font-family:'Cormorant Garamond'; font-size:clamp(34px,6vw,60px); font-weight:600;}
-  .g-cover .date{font-size:13px; letter-spacing:2px; color:#d8dfec; margin-top:8px;}
+  /* ===== ADMIN LOGIN ===== */
+  .admin-lock{max-width:360px; margin:100px auto; text-align:center; padding:36px 28px; background:var(--paper-2); border:1px solid var(--line);}
+  .admin-lock h2{font-family:'Cormorant Garamond'; color:var(--navy); font-size:24px; margin-bottom:6px;}
+  .admin-lock p{font-size:12px; color:var(--ink-soft); margin-bottom:20px;}
+  .admin-lock input{width:100%; padding:11px 13px; border:1px solid var(--line); margin-bottom:12px; font-family:'Poppins'; font-size:13px;}
+  .admin-lock button{width:100%; padding:11px; background:var(--navy); color:var(--paper-2); border:none; letter-spacing:1px; font-size:13px; cursor:pointer;}
+  .admin-lock button:hover{background:var(--gold); color:var(--navy);}
+  .err{color:#B23B3B; font-size:11px; margin-top:8px;}
 
-  .g-meta{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:26px 6vw; border-bottom:1px solid var(--line); flex-wrap:wrap; gap:16px;
-  }
-  .g-meta h2{font-family:'Cormorant Garamond'; font-size:24px; color:var(--navy);}
-  .g-meta .sub{font-size:11px; letter-spacing:2px; color:var(--ink-soft); margin-top:4px;}
-  .g-actions{display:flex; gap:12px; flex-wrap:wrap;}
-  .btn{
-    font-size:12px; letter-spacing:1px; padding:11px 20px; border-radius:3px;
-    cursor:pointer; border:1px solid var(--navy); background:transparent; color:var(--navy);
-    transition:all .25s; display:inline-flex; align-items:center; gap:8px;
-  }
+  /* ===== ADMIN DASHBOARD ===== */
+  .admin-wrap{padding:30px 5vw 80px; max-width:1100px; margin:0 auto;}
+  .admin-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:10px;}
+  .admin-head h2{font-family:'Cormorant Garamond'; font-size:28px; color:var(--navy);}
+  .card{background:var(--paper-2); border:1px solid var(--line); padding:22px; border-radius:4px; margin-bottom:20px;}
+  .card h3{font-family:'Cormorant Garamond'; font-size:20px; color:var(--navy); margin-bottom:14px;}
+  .form-row{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;}
+  .form-row.full{grid-template-columns:1fr;}
+  label{display:block; font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin-bottom:6px;}
+  input, select{width:100%; padding:10px 12px; border:1px solid var(--line); font-family:'Poppins'; font-size:13px; background:var(--paper);}
+  .btn{font-size:12px; letter-spacing:1px; padding:11px 20px; border-radius:3px; cursor:pointer; border:1px solid var(--navy); background:transparent; color:var(--navy); transition:all .25s; display:inline-flex; align-items:center; gap:8px;}
   .btn.primary{background:var(--navy); color:var(--paper-2);}
   .btn:hover{background:var(--gold); border-color:var(--gold); color:var(--navy);}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
 
-  .event-tabs{
-    display:flex; gap:34px; padding:0 6vw; border-bottom:1px solid var(--line);
-    overflow-x:auto; background:var(--paper-2);
-  }
-  .event-tabs button{
-    background:none; border:none; font-size:13px; letter-spacing:1px; color:var(--ink-soft);
-    padding:16px 0; border-bottom:2px solid transparent; white-space:nowrap; cursor:pointer;
-  }
+  .collection-list-row{display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--line);}
+  .collection-list-row:last-child{border-bottom:none;}
+  .collection-list-row .meta{font-size:11px; color:var(--ink-soft); margin-top:3px;}
+  .collection-list-row .name{font-family:'Cormorant Garamond'; font-size:18px; color:var(--navy);}
+  .row-actions{display:flex; gap:8px;}
+
+  .event-pill-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;}
+  .event-pill{padding:8px 16px; border:1px solid var(--line); border-radius:20px; font-size:12px; cursor:pointer; color:var(--ink-soft);}
+  .event-pill.active{background:var(--navy); color:var(--paper-2); border-color:var(--navy);}
+
+  .upload-box{border:2px dashed var(--line); padding:30px; text-align:center; border-radius:4px; margin-bottom:16px; cursor:pointer;}
+  .upload-box:hover{border-color:var(--gold);}
+  .upload-box input{display:none;}
+  .progress-text{font-size:12px; color:var(--ink-soft); margin-bottom:14px;}
+
+  .admin-photo-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px;}
+  .admin-photo-tile{position:relative; aspect-ratio:1/1; background:var(--line); border-radius:3px; overflow:hidden;}
+  .admin-photo-tile img{width:100%; height:100%; object-fit:cover; display:block;}
+  .admin-photo-tile .tile-actions{position:absolute; inset:0; background:rgba(10,27,51,0); opacity:0; transition:.2s; display:flex; align-items:center; justify-content:center; gap:6px;}
+  .admin-photo-tile:hover .tile-actions{background:rgba(10,27,51,0.45); opacity:1;}
+  .mini-icon{width:28px; height:28px; border-radius:50%; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer;}
+
+  .link-box{display:flex; gap:8px; align-items:center; background:var(--paper); border:1px solid var(--line); padding:10px 12px; font-size:12px; word-break:break-all;}
+
+  /* ===== CLIENT GALLERY ===== */
+  .g-cover{position:relative; height:52vh; min-height:340px; background:linear-gradient(160deg,#d9c9a3,#b9895a) center/cover; display:flex; align-items:flex-end; padding:0 6vw 40px; color:var(--paper-2);}
+  .g-cover::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,27,51,0.15) 0%, rgba(10,27,51,0.85) 100%);}
+  .g-cover-content{position:relative; z-index:2;}
+  .g-cover .eyebrow{font-size:12px; letter-spacing:3px; color:var(--gold-soft); margin-bottom:8px;}
+  .g-cover h1{font-family:'Cormorant Garamond'; font-size:clamp(30px,6vw,54px); font-weight:600;}
+  .g-cover .date{font-size:12px; letter-spacing:2px; color:#d8dfec; margin-top:6px;}
+  .g-meta{display:flex; justify-content:space-between; align-items:center; padding:22px 6vw; border-bottom:1px solid var(--line); flex-wrap:wrap; gap:14px;}
+  .event-tabs{display:flex; gap:30px; padding:0 6vw; border-bottom:1px solid var(--line); overflow-x:auto; background:var(--paper-2);}
+  .event-tabs button{background:none; border:none; font-size:13px; letter-spacing:1px; color:var(--ink-soft); padding:14px 0; border-bottom:2px solid transparent; white-space:nowrap; cursor:pointer;}
   .event-tabs button.active{color:var(--navy); border-color:var(--gold); font-weight:600;}
-
-  .photo-grid{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
-    padding:6px 6vw 100px;
-  }
-  .photo-tile{
-    position:relative; aspect-ratio:4/5; overflow:hidden;
-    background:linear-gradient(150deg,#eadfc4,#c9a877);
-    cursor:pointer;
-  }
-  .photo-tile .num{
-    position:absolute; bottom:8px; left:8px; font-size:10px; color:rgba(30,34,51,.55);
-    letter-spacing:1px;
-  }
-  .photo-tile .hover-actions{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    gap:10px; background:rgba(10,27,51,0); opacity:0; transition:all .25s;
-  }
+  .photo-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:6px 6vw 100px;}
+  .photo-tile{position:relative; aspect-ratio:4/5; overflow:hidden; background:linear-gradient(150deg,#eadfc4,#c9a877);}
+  .photo-tile img{width:100%; height:100%; object-fit:cover; display:block;}
+  .photo-tile .hover-actions{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(10,27,51,0); opacity:0; transition:all .25s;}
   .photo-tile:hover .hover-actions{background:rgba(10,27,51,0.35); opacity:1;}
-  .icon-btn{
-    width:34px; height:34px; border-radius:50%; background:rgba(247,243,234,0.92);
-    display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--navy);
-  }
+  .icon-btn{width:34px; height:34px; border-radius:50%; background:rgba(247,243,234,0.92); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--navy); cursor:pointer;}
+  .download-bar{position:sticky; bottom:0; background:var(--navy); color:var(--paper-2); padding:16px 6vw; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12px;}
+  .res-toggle{display:flex; gap:8px;}
+  .res-toggle button{font-size:11px; letter-spacing:1px; padding:8px 14px; border-radius:20px; border:1px solid rgba(230,211,161,0.4); background:transparent; color:var(--gold-soft); cursor:pointer;}
+  .res-toggle button.active{background:var(--gold); color:var(--navy); border-color:var(--gold);}
 
-  .download-bar{
-    position:sticky; bottom:0; background:var(--navy); color:var(--paper-2);
-    padding:16px 6vw; display:flex; justify-content:space-between; align-items:center;
-    flex-wrap:wrap; gap:12px; font-size:12px;
-  }
-  .download-bar .res-toggle{display:flex; gap:8px;}
-  .download-bar .res-toggle button{
-    font-size:11px; letter-spacing:1px; padding:8px 14px; border-radius:20px;
-    border:1px solid rgba(230,211,161,0.4); background:transparent; color:var(--gold-soft); cursor:pointer;
-  }
-  .download-bar .res-toggle button.active{background:var(--gold); color:var(--navy); border-color:var(--gold);}
-
-  /* ================= ADMIN (locked preview) ================= */
-  .admin-lock{
-    max-width:380px; margin:120px auto; text-align:center; padding:40px 30px;
-    background:var(--paper-2); border:1px solid var(--line);
-  }
-  .admin-lock h2{font-family:'Cormorant Garamond'; color:var(--navy); font-size:26px; margin-bottom:8px;}
-  .admin-lock p{font-size:12px; color:var(--ink-soft); margin-bottom:22px;}
-  .admin-lock input{
-    width:100%; padding:12px 14px; border:1px solid var(--line); margin-bottom:14px; font-family:'Poppins'; font-size:13px;
-  }
-  .admin-lock button{width:100%; padding:12px; background:var(--navy); color:var(--paper-2); border:none; letter-spacing:1px; font-size:13px; cursor:pointer;}
-  .admin-lock button:hover{background:var(--gold); color:var(--navy);}
-
-  /* ---------- MOBILE ---------- */
   @media (max-width:720px){
     .photo-grid{grid-template-columns:repeat(2,1fr);}
-    .g-cover{height:46vh; min-height:300px;}
-    .nav-links{display:none;}
-    .g-actions{width:100%;}
-    .btn{flex:1; justify-content:center;}
+    .admin-photo-grid{grid-template-columns:repeat(3,1fr);}
+    .g-cover{height:44vh; min-height:280px;}
+    .form-row{grid-template-columns:1fr;}
+    .nav-links{gap:14px;}
   }
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="brand">SHUTTER STORIES</div>
+  <div class="brand" onclick="goHome()">SHUTTER STORIES</div>
   <div class="nav-links">
-    <a href="#">Portfolio</a>
-    <a href="#">Contact</a>
+    <span onclick="goHome()">Portfolio</span>
+    <span onclick="goAdmin()">Studio Login</span>
   </div>
 </div>
 
-<!-- demo-only switcher so Pavan can review all 3 views in one file -->
-<div class="view-switch">
-  <button class="active" onclick="showPage('home')">Public Homepage</button>
-  <button onclick="showPage('gallery')">Client Gallery</button>
-  <button onclick="showPage('admin')">Admin Login (preview)</button>
+<!-- ============ CONFIG BANNER (shows until you set WEBAPP_URL) ============ -->
+<div id="configWarning" class="center-msg" style="display:none; background:#fff3e0; color:#8a5a1a; padding:14px; font-size:12px;">
+  ⚠️ Backend not connected yet — paste your Apps Script Web App URL into the WEBAPP_URL variable near the top of this file's &lt;script&gt; section.
 </div>
 
-<!-- ================= PUBLIC HOMEPAGE ================= -->
-<div class="page active" id="home">
+<!-- ============ PUBLIC HOMEPAGE ============ -->
+<div class="page active" id="homePage">
   <div class="home-hero">
     <div class="avatar">SS</div>
     <h1>Shutter Stories</h1>
     <div class="tagline">Wedding &amp; Event Photography · Mangalore</div>
-    <div class="contact-row">
-      <span>🌐 shutterstories.in</span>
-      <span>📞 09964052479</span>
-      <span>✉️ shutterstories@gmail.com</span>
-    </div>
   </div>
   <div class="dot-strip"></div>
-
-  <div class="cat-filter">
-    <button class="active">All</button>
-    <button>Wedding</button>
-    <button>Pre-Wedding</button>
-    <button>Maternity</button>
-    <button>Birthday</button>
-    <button>Baby Shower</button>
+  <div class="cat-filter" id="homeCatFilter">
+    <button class="active" data-cat="all">All</button>
+    <button data-cat="Wedding">Wedding</button>
+    <button data-cat="Pre-Wedding">Pre-Wedding</button>
+    <button data-cat="Maternity">Maternity</button>
+    <button data-cat="Birthday">Birthday</button>
+    <button data-cat="Baby Shower">Baby Shower</button>
   </div>
-
-  <div class="collections-grid">
-    <div class="collection-card" onclick="showPage('gallery')">
-      <div class="collection-cover"><span class="tag">WEDDING</span></div>
-      <div class="collection-info">
-        <h3>Pushkar &amp; Tanisha</h3>
-        <p>May 18, 2025</p>
-      </div>
-    </div>
-    <div class="collection-card">
-      <div class="collection-cover"><span class="tag">PRE-WEDDING</span></div>
-      <div class="collection-info">
-        <h3>Aarav &amp; Meera</h3>
-        <p>April 02, 2025</p>
-      </div>
-    </div>
-    <div class="collection-card">
-      <div class="collection-cover"><span class="tag">MATERNITY</span></div>
-      <div class="collection-info">
-        <h3>The Rao Family</h3>
-        <p>March 21, 2025</p>
-      </div>
-    </div>
-    <div class="collection-card">
-      <div class="collection-cover"><span class="tag">WEDDING</span></div>
-      <div class="collection-info">
-        <h3>Nikhil &amp; Divya</h3>
-        <p>Feb 14, 2025</p>
-      </div>
-    </div>
+  <div class="collections-grid" id="homeGrid">
+    <div class="center-msg">Loading collections…</div>
   </div>
 </div>
 
-<!-- ================= INDIVIDUAL CLIENT GALLERY ================= -->
-<div class="page" id="gallery">
-  <div class="g-cover">
-    <div class="g-cover-content">
-      <div class="eyebrow">WEDDING COLLECTION</div>
-      <h1>Pushkar &amp; Tanisha</h1>
-      <div class="date">MAY 18TH, 2025</div>
-    </div>
-  </div>
-
-  <div class="g-meta">
-    <div>
-      <h2>Pushkar × Tanisha</h2>
-      <div class="sub">128 PHOTOS · PRIVATE GALLERY</div>
-    </div>
-    <div class="g-actions">
-      <button class="btn">♡ Save</button>
-      <button class="btn primary">⬇ Download All</button>
-    </div>
-  </div>
-
-  <div class="event-tabs">
-    <button class="active">Haldi &amp; Muhurtha</button>
-    <button>Sangeet</button>
-    <button>Wedding</button>
-    <button>Reception</button>
-  </div>
-
-  <div class="photo-grid" id="photoGrid"></div>
-
-  <div class="download-bar">
-    <div>Resolution:</div>
-    <div class="res-toggle">
-      <button class="active">Compressed (web)</button>
-      <button>Full Resolution</button>
-    </div>
-    <button class="btn primary" style="border:1px solid var(--gold); background:var(--gold); color:var(--navy);">⬇ Download Selected</button>
-  </div>
-</div>
-
-<!-- ================= ADMIN LOGIN PREVIEW ================= -->
-<div class="page" id="admin">
+<!-- ============ ADMIN LOGIN ============ -->
+<div class="page" id="adminLoginPage">
   <div class="admin-lock">
     <h2>Studio Access</h2>
     <p>Enter your password to manage collections</p>
-    <input type="password" placeholder="Password">
-    <button>Unlock Dashboard</button>
+    <input type="password" id="adminPassInput" placeholder="Password">
+    <button onclick="tryLogin()">Unlock Dashboard</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ============ ADMIN DASHBOARD ============ -->
+<div class="page" id="adminDashPage">
+  <div class="admin-wrap">
+    <div class="admin-head">
+      <h2>Manage Collections</h2>
+      <button class="btn" onclick="logout()">Log out</button>
+    </div>
+
+    <div class="card">
+      <h3>Create New Collection</h3>
+      <div class="form-row">
+        <div>
+          <label>CLIENT NAME</label>
+          <input id="newClientName" placeholder="e.g. Pushkar x Tanisha">
+        </div>
+        <div>
+          <label>EVENT DATE</label>
+          <input id="newEventDate" type="date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>CATEGORY</label>
+          <select id="newCategory">
+            <option>Wedding</option>
+            <option>Pre-Wedding</option>
+            <option>Maternity</option>
+            <option>Birthday</option>
+            <option>Baby Shower</option>
+            <option>Engagement</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="btn primary" onclick="createCollection()" style="width:100%; justify-content:center;">+ Create Collection</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>All Collections</h3>
+      <div id="adminCollectionList"><div class="center-msg">Loading…</div></div>
+    </div>
+
+    <!-- Collection manager (upload / photos) -->
+    <div class="card" id="collectionManager" style="display:none;">
+      <h3 id="cmTitle">Manage Collection</h3>
+      <div class="link-box" style="margin-bottom:16px;">
+        <span id="cmLink">—</span>
+        <button class="btn" onclick="copyClientLink()">Copy Link</button>
+      </div>
+
+      <div class="event-pill-row" id="eventPillRow"></div>
+      <div style="margin-bottom:14px;">
+        <input type="text" id="newEventTypeInput" placeholder="New event name e.g. Sangeet" style="max-width:240px; display:inline-block;">
+        <button class="btn" onclick="addEventType()">+ Add Event</button>
+      </div>
+
+      <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
+        <div>📤 Click or drag photos here to upload</div>
+        <input type="file" id="fileInput" multiple accept="image/*" onchange="handleFiles(this.files)">
+      </div>
+      <div class="progress-text" id="progressText"></div>
+
+      <div class="admin-photo-grid" id="adminPhotoGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CLIENT GALLERY (public, shared link) ============ -->
+<div class="page" id="clientGalleryPage">
+  <div class="g-cover" id="galleryCover">
+    <div class="g-cover-content">
+      <div class="eyebrow" id="galEyebrow">COLLECTION</div>
+      <h1 id="galName">Loading…</h1>
+      <div class="date" id="galDate"></div>
+    </div>
+  </div>
+  <div class="g-meta">
+    <div>
+      <h2 id="galClientName">—</h2>
+      <div class="meta" id="galSub" style="font-size:11px; letter-spacing:2px; color:var(--ink-soft);">PRIVATE GALLERY</div>
+    </div>
+  </div>
+  <div class="event-tabs" id="galEventTabs"></div>
+  <div class="photo-grid" id="galPhotoGrid"></div>
+  <div class="download-bar">
+    <div>Resolution:</div>
+    <div class="res-toggle" id="galResToggle">
+      <button class="active" data-res="compressed">Compressed (web)</button>
+      <button data-res="full">Full Resolution</button>
+    </div>
+    <button class="btn primary" style="border:1px solid var(--gold); background:var(--gold); color:var(--navy);" onclick="downloadAllCurrentTab()">⬇ Download All (this event)</button>
   </div>
 </div>
 
 <script>
+/* ================= CONFIG ================= */
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwcMZyt7BR45r-3Afm2RX66U0LswESWDyLYT2k3zq2G0zIEVeN72ukn2GQnMhHJJ8zdhA/exec";
+/* =========================================== */
+
+let adminPassword = sessionStorage.getItem('ss_admin_pass') || '';
+let currentManagedFolderId = null;
+let currentManagedEvents = [];
+let currentManagedEventType = null;
+let currentGalleryFolderId = null;
+let currentGalleryEvents = [];
+let currentGalleryEventType = null;
+let currentGalleryRes = 'compressed';
+
+function api(payload){
+  return fetch(WEBAPP_URL, { method:'POST', body: JSON.stringify(payload) })
+    .then(r => r.json());
+}
+
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.view-switch button').forEach(b=>b.classList.remove('active'));
-  event.target.classList.add('active');
 }
 
-// generate placeholder photo grid
-const grid = document.getElementById('photoGrid');
-for(let i=1;i<=12;i++){
-  const tile = document.createElement('div');
-  tile.className='photo-tile';
-  tile.innerHTML = `<span class="num">IMG_${String(i).padStart(3,'0')}</span>
-    <div class="hover-actions">
-      <div class="icon-btn">⤢</div>
-      <div class="icon-btn">⬇</div>
-    </div>`;
-  grid.appendChild(tile);
+function goHome(){
+  history.pushState({}, '', location.pathname);
+  showPage('homePage');
+  loadHomeCollections();
+}
+
+function goAdmin(){
+  if(adminPassword){ showPage('adminDashPage'); loadAdminCollections(); }
+  else showPage('adminLoginPage');
+}
+
+/* ---------- INIT: check for ?gallery=ID in URL ---------- */
+window.addEventListener('DOMContentLoaded', () => {
+  if(WEBAPP_URL.indexOf('PASTE_YOUR') === 0){
+    document.getElementById('configWarning').style.display='block';
+  }
+  const params = new URLSearchParams(location.search);
+  const galleryId = params.get('gallery');
+  if(galleryId){
+    openClientGallery(galleryId);
+  } else {
+    loadHomeCollections();
+  }
+});
+
+/* ================= PUBLIC HOMEPAGE ================= */
+function loadHomeCollections(){
+  const grid = document.getElementById('homeGrid');
+  api({action:'listCollections'}).then(res=>{
+    if(!res.success){ grid.innerHTML = '<div class="center-msg">Could not load collections.</div>'; return; }
+    renderHomeGrid(res.collections, 'all');
+  }).catch(()=>{ grid.innerHTML = '<div class="center-msg">Backend not connected yet.</div>'; });
+}
+
+function renderHomeGrid(collections, filter){
+  const grid = document.getElementById('homeGrid');
+  const filtered = filter==='all' ? collections : collections.filter(c=>c.category===filter);
+  if(filtered.length===0){ grid.innerHTML = '<div class="center-msg">No collections yet.</div>'; return; }
+  grid.innerHTML = filtered.map(c => `
+    <div class="collection-card" onclick="location.href='?gallery=${c.id}'">
+      <div class="collection-cover" style="${c.coverFileId ? `background-image:url('https://drive.google.com/uc?export=view&id=${c.coverFileId}')` : ''}">
+        <span class="tag">${(c.category||'').toUpperCase()}</span>
+      </div>
+      <div class="collection-info">
+        <h3>${c.clientName}</h3>
+        <p>${c.eventDate}</p>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('homeCatFilter').addEventListener('click', e=>{
+  if(e.target.tagName!=='BUTTON') return;
+  document.querySelectorAll('#homeCatFilter button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  api({action:'listCollections'}).then(res=>{
+    if(res.success) renderHomeGrid(res.collections, e.target.dataset.cat);
+  });
+});
+
+/* ================= ADMIN LOGIN ================= */
+function tryLogin(){
+  const pass = document.getElementById('adminPassInput').value;
+  api({action:'auth', password:pass}).then(res=>{
+    if(res.success){
+      adminPassword = pass;
+      sessionStorage.setItem('ss_admin_pass', pass);
+      showPage('adminDashPage');
+      loadAdminCollections();
+    } else {
+      document.getElementById('loginErr').textContent = 'Incorrect password.';
+    }
+  });
+}
+
+function logout(){
+  adminPassword = '';
+  sessionStorage.removeItem('ss_admin_pass');
+  showPage('homePage');
+  loadHomeCollections();
+}
+
+/* ================= ADMIN DASHBOARD ================= */
+function loadAdminCollections(){
+  const list = document.getElementById('adminCollectionList');
+  list.innerHTML = '<div class="center-msg">Loading…</div>';
+  api({action:'listCollections'}).then(res=>{
+    if(!res.success){ list.innerHTML = '<div class="center-msg">Could not load.</div>'; return; }
+    if(res.collections.length===0){ list.innerHTML = '<div class="center-msg">No collections yet — create one above.</div>'; return; }
+    list.innerHTML = res.collections.map(c => `
+      <div class="collection-list-row">
+        <div>
+          <div class="name">${c.clientName}</div>
+          <div class="meta">${c.category} · ${c.eventDate}</div>
+        </div>
+        <div class="row-actions">
+          <button class="btn" onclick="openManager('${c.id}','${c.clientName.replace(/'/g,"\\'")}','${c.eventDate}')">Manage</button>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function createCollection(){
+  const clientName = document.getElementById('newClientName').value.trim();
+  const eventDate = document.getElementById('newEventDate').value;
+  const category = document.getElementById('newCategory').value;
+  if(!clientName || !eventDate){ alert('Please enter client name and date.'); return; }
+  api({action:'createCollection', password:adminPassword, clientName, eventDate, category}).then(res=>{
+    if(res.success){
+      document.getElementById('newClientName').value='';
+      document.getElementById('newEventDate').value='';
+      loadAdminCollections();
+    } else {
+      alert('Error: ' + (res.error||'could not create'));
+    }
+  });
+}
+
+function openManager(folderId, clientName, eventDate){
+  currentManagedFolderId = folderId;
+  document.getElementById('collectionManager').style.display='block';
+  document.getElementById('cmTitle').textContent = 'Manage: ' + clientName;
+  const link = location.origin + location.pathname + '?gallery=' + folderId;
+  document.getElementById('cmLink').textContent = link;
+  document.getElementById('collectionManager').dataset.link = link;
+
+  api({action:'getCollectionMeta', folderId}).then(res=>{
+    currentManagedEvents = res.events.map(e=>e.name);
+    if(currentManagedEvents.length===0) currentManagedEvents = ['Wedding'];
+    currentManagedEventType = currentManagedEvents[0];
+    renderEventPills();
+    loadAdminPhotos();
+  });
+}
+
+function copyClientLink(){
+  const link = document.getElementById('collectionManager').dataset.link;
+  navigator.clipboard.writeText(link).then(()=> alert('Link copied!'));
+}
+
+function renderEventPills(){
+  const row = document.getElementById('eventPillRow');
+  row.innerHTML = currentManagedEvents.map(ev => `
+    <div class="event-pill ${ev===currentManagedEventType?'active':''}" onclick="selectManagedEvent('${ev.replace(/'/g,"\\'")}')">${ev}</div>
+  `).join('');
+}
+
+function selectManagedEvent(ev){
+  currentManagedEventType = ev;
+  renderEventPills();
+  loadAdminPhotos();
+}
+
+function addEventType(){
+  const val = document.getElementById('newEventTypeInput').value.trim();
+  if(!val) return;
+  if(!currentManagedEvents.includes(val)) currentManagedEvents.push(val);
+  currentManagedEventType = val;
+  document.getElementById('newEventTypeInput').value='';
+  renderEventPills();
+  loadAdminPhotos();
+}
+
+function loadAdminPhotos(){
+  const grid = document.getElementById('adminPhotoGrid');
+  grid.innerHTML = '<div class="center-msg">Loading photos…</div>';
+  api({action:'listPhotos', folderId:currentManagedFolderId, eventType:currentManagedEventType, resolution:'compressed'}).then(res=>{
+    if(!res.success){ grid.innerHTML=''; return; }
+    grid.innerHTML = res.photos.map(p => `
+      <div class="admin-photo-tile">
+        <img src="${p.viewUrl}" loading="lazy">
+        <div class="tile-actions">
+          <div class="mini-icon" title="Set as cover" onclick="setCover('${p.id}')">★</div>
+          <div class="mini-icon" title="Delete" onclick="deletePhoto('${p.id}')">✕</div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function setCover(fileId){
+  api({action:'setCover', password:adminPassword, folderId:currentManagedFolderId, fileId}).then(res=>{
+    if(res.success) alert('Cover photo updated.'); else alert('Error setting cover.');
+  });
+}
+
+function deletePhoto(fileId){
+  if(!confirm('Delete this photo? This also removes it from the client view.')) return;
+  api({action:'deletePhoto', password:adminPassword, fileId}).then(()=> loadAdminPhotos());
+}
+
+/* ---------- Upload with auto full + compressed versions ---------- */
+function handleFiles(fileList){
+  const files = Array.from(fileList);
+  if(files.length===0) return;
+  uploadQueue(files, 0);
+}
+
+function uploadQueue(files, index){
+  const progress = document.getElementById('progressText');
+  if(index >= files.length){
+    progress.textContent = 'Upload complete!';
+    loadAdminPhotos();
+    return;
+  }
+  progress.textContent = `Uploading ${index+1} of ${files.length}…`;
+  const file = files[index];
+
+  Promise.all([
+    fileToBase64(file),
+    compressImage(file, 1600, 0.75)
+  ]).then(([fullB64, compressed]) => {
+    const uploadFull = api({
+      action:'uploadPhoto', password:adminPassword, folderId:currentManagedFolderId,
+      eventType:currentManagedEventType, resolution:'full',
+      fileName:file.name, mimeType:file.type, base64Data:fullB64
+    });
+    const uploadCompressed = api({
+      action:'uploadPhoto', password:adminPassword, folderId:currentManagedFolderId,
+      eventType:currentManagedEventType, resolution:'compressed',
+      fileName:file.name, mimeType:'image/jpeg', base64Data:compressed
+    });
+    Promise.all([uploadFull, uploadCompressed]).then(()=>{
+      uploadQueue(files, index+1);
+    });
+  });
+}
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let { width, height } = img;
+      if(width > height && width > maxDim){ height *= maxDim/width; width = maxDim; }
+      else if(height > maxDim){ width *= maxDim/height; height = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* drag and drop */
+const uploadBox = document.getElementById('uploadBox');
+['dragover','dragleave','drop'].forEach(evt=>{
+  uploadBox.addEventListener(evt, e=>{ e.preventDefault(); });
+});
+uploadBox.addEventListener('drop', e=>{
+  handleFiles(e.dataTransfer.files);
+});
+
+/* ================= CLIENT GALLERY (public link) ================= */
+function openClientGallery(folderId){
+  currentGalleryFolderId = folderId;
+  showPage('clientGalleryPage');
+  api({action:'getCollectionMeta', folderId}).then(res=>{
+    if(!res.success) return;
+    document.getElementById('galEyebrow').textContent = (res.category||'').toUpperCase() + ' COLLECTION';
+    document.getElementById('galName').textContent = res.clientName;
+    document.getElementById('galDate').textContent = (res.eventDate||'').toUpperCase();
+    document.getElementById('galClientName').textContent = res.clientName;
+    if(res.coverFileId){
+      document.getElementById('galleryCover').style.backgroundImage =
+        `url('https://drive.google.com/uc?export=view&id=${res.coverFileId}')`;
+    }
+    currentGalleryEvents = res.events.map(e=>e.name);
+    currentGalleryEventType = currentGalleryEvents[0] || null;
+    renderGalleryTabs();
+    loadGalleryPhotos();
+  });
+}
+
+function renderGalleryTabs(){
+  const tabs = document.getElementById('galEventTabs');
+  tabs.innerHTML = currentGalleryEvents.map(ev => `
+    <button class="${ev===currentGalleryEventType?'active':''}" onclick="selectGalleryEvent('${ev.replace(/'/g,"\\'")}')">${ev}</button>
+  `).join('');
+}
+
+function selectGalleryEvent(ev){
+  currentGalleryEventType = ev;
+  renderGalleryTabs();
+  loadGalleryPhotos();
+}
+
+document.getElementById('galResToggle').addEventListener('click', e=>{
+  if(e.target.tagName!=='BUTTON') return;
+  document.querySelectorAll('#galResToggle button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  currentGalleryRes = e.target.dataset.res;
+});
+
+function loadGalleryPhotos(){
+  const grid = document.getElementById('galPhotoGrid');
+  grid.innerHTML = '<div class="center-msg">Loading photos…</div>';
+  if(!currentGalleryEventType){ grid.innerHTML = '<div class="center-msg">No photos yet.</div>'; return; }
+  api({action:'listPhotos', folderId:currentGalleryFolderId, eventType:currentGalleryEventType, resolution:'compressed'}).then(res=>{
+    if(!res.success || res.photos.length===0){ grid.innerHTML = '<div class="center-msg">No photos yet.</div>'; return; }
+    grid.innerHTML = res.photos.map(p => `
+      <div class="photo-tile">
+        <img src="${p.viewUrl}" loading="lazy">
+        <div class="hover-actions">
+          <a class="icon-btn" href="${p.downloadUrl}" target="_blank" title="Download this photo">⬇</a>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function downloadAllCurrentTab(){
+  if(!currentGalleryEventType) return;
+  api({action:'listPhotos', folderId:currentGalleryFolderId, eventType:currentGalleryEventType, resolution:currentGalleryRes}).then(res=>{
+    if(res.success && res.folderUrl){
+      alert('Opening your photos in Google Drive — click the download icon there to save all at once as a zip.');
+      window.open(res.folderUrl, '_blank');
+    }
+  });
 }
 </script>
 
