@@ -148,11 +148,6 @@
   <div class="dot-strip"></div>
   <div class="cat-filter" id="homeCatFilter">
     <button class="active" data-cat="all">All</button>
-    <button data-cat="Wedding">Wedding</button>
-    <button data-cat="Pre-Wedding">Pre-Wedding</button>
-    <button data-cat="Maternity">Maternity</button>
-    <button data-cat="Birthday">Birthday</button>
-    <button data-cat="Baby Shower">Baby Shower</button>
   </div>
   <div class="collections-grid" id="homeGrid">
     <div class="center-msg">Loading collections…</div>
@@ -193,14 +188,7 @@
       <div class="form-row">
         <div>
           <label>CATEGORY</label>
-          <select id="newCategory">
-            <option>Wedding</option>
-            <option>Pre-Wedding</option>
-            <option>Maternity</option>
-            <option>Birthday</option>
-            <option>Baby Shower</option>
-            <option>Engagement</option>
-          </select>
+          <input id="newCategory" placeholder="e.g. Wedding, Corporate, Anniversary...">
         </div>
         <div style="display:flex; align-items:flex-end;">
           <button class="btn primary" onclick="createCollection()" style="width:100%; justify-content:center;">+ Create Collection</button>
@@ -258,6 +246,7 @@
       <h2 id="galClientName">—</h2>
       <div class="meta" id="galSub" style="font-size:11px; letter-spacing:2px; color:var(--ink-soft);">PRIVATE GALLERY</div>
     </div>
+    <button class="btn primary" onclick="downloadEntireGallery()">⬇ Download Entire Gallery</button>
   </div>
   <div class="event-tabs" id="galEventTabs"></div>
   <div class="photo-grid" id="galPhotoGrid"></div>
@@ -284,6 +273,7 @@ let currentGalleryFolderId = null;
 let currentGalleryEvents = [];
 let currentGalleryEventType = null;
 let currentGalleryRes = 'compressed';
+let currentGalleryFolderUrl = null;
 
 function api(payload){
   return fetch(WEBAPP_URL, { method:'POST', body: JSON.stringify(payload) })
@@ -325,8 +315,16 @@ function loadHomeCollections(){
   const grid = document.getElementById('homeGrid');
   api({action:'listCollections'}).then(res=>{
     if(!res.success){ grid.innerHTML = '<div class="center-msg">Could not load collections.</div>'; return; }
+    buildHomeCatFilter(res.collections);
     renderHomeGrid(res.collections, 'all');
   }).catch(()=>{ grid.innerHTML = '<div class="center-msg">Backend not connected yet.</div>'; });
+}
+
+function buildHomeCatFilter(collections){
+  const bar = document.getElementById('homeCatFilter');
+  const cats = [...new Set(collections.filter(c=>c.isPublic).map(c=>c.category).filter(Boolean))];
+  bar.innerHTML = '<button class="active" data-cat="all">All</button>' +
+    cats.map(cat => `<button data-cat="${cat}">${cat}</button>`).join('');
 }
 
 function renderHomeGrid(collections, filter){
@@ -427,7 +425,7 @@ function openManager(folderId, clientName, eventDate){
   currentManagedFolderId = folderId;
   document.getElementById('collectionManager').style.display='block';
   document.getElementById('cmTitle').textContent = 'Manage: ' + clientName;
-  const link = location.origin + location.pathname + '?gallery=' + folderId;
+  const link = WEBAPP_URL + '?gallery=' + folderId;
   document.getElementById('cmLink').textContent = link;
   document.getElementById('collectionManager').dataset.link = link;
 
@@ -480,21 +478,42 @@ function addEventType(){
   loadAdminPhotos();
 }
 
+let currentAdminPhotos = [];
+
 function loadAdminPhotos(){
   const grid = document.getElementById('adminPhotoGrid');
   if(!currentManagedEventType){ grid.innerHTML = '<div class="center-msg">Add an event name above to start uploading.</div>'; return; }
   grid.innerHTML = '<div class="center-msg">Loading photos…</div>';
   api({action:'listPhotos', folderId:currentManagedFolderId, eventType:currentManagedEventType, resolution:'compressed'}).then(res=>{
     if(!res.success){ grid.innerHTML=''; return; }
-    grid.innerHTML = res.photos.map(p => `
-      <div class="admin-photo-tile">
-        <img src="${p.viewUrl}" loading="lazy">
-        <div class="tile-actions">
-          <div class="mini-icon" title="Set as cover" onclick="setCover('${p.id}')">★</div>
-          <div class="mini-icon" title="Delete" onclick="deletePhoto('${p.id}')">✕</div>
-        </div>
-      </div>`).join('');
+    currentAdminPhotos = res.photos;
+    renderAdminPhotoGrid();
   });
+}
+
+function renderAdminPhotoGrid(){
+  const grid = document.getElementById('adminPhotoGrid');
+  grid.innerHTML = currentAdminPhotos.map((p,i) => `
+    <div class="admin-photo-tile">
+      <img src="${p.viewUrl}" loading="lazy">
+      <div class="tile-actions">
+        <div class="mini-icon" title="Move left" onclick="movePhoto(${i},-1)">◀</div>
+        <div class="mini-icon" title="Set as cover" onclick="setCover('${p.id}')">★</div>
+        <div class="mini-icon" title="Delete" onclick="deletePhoto('${p.id}')">✕</div>
+        <div class="mini-icon" title="Move right" onclick="movePhoto(${i},1)">▶</div>
+      </div>
+    </div>`).join('');
+}
+
+function movePhoto(index, direction){
+  const newIndex = index + direction;
+  if(newIndex < 0 || newIndex >= currentAdminPhotos.length) return;
+  const temp = currentAdminPhotos[index];
+  currentAdminPhotos[index] = currentAdminPhotos[newIndex];
+  currentAdminPhotos[newIndex] = temp;
+  renderAdminPhotoGrid();
+  const orderedNames = currentAdminPhotos.map(p=>p.name);
+  api({action:'reorderPhotos', password:adminPassword, folderId:currentManagedFolderId, eventType:currentManagedEventType, orderedNames});
 }
 
 function setCover(fileId){
@@ -596,6 +615,7 @@ function openClientGallery(folderId){
       document.getElementById('galleryCover').style.backgroundImage =
         `url('https://drive.google.com/thumbnail?id=${res.coverFileId}&sz=w1000')`;
     }
+    currentGalleryFolderUrl = res.folderUrl;
     currentGalleryEvents = res.events.map(e=>e.name);
     currentGalleryEventType = currentGalleryEvents[0] || null;
     renderGalleryTabs();
@@ -637,6 +657,12 @@ function loadGalleryPhotos(){
         </div>
       </div>`).join('');
   });
+}
+
+function downloadEntireGallery(){
+  if(!currentGalleryFolderUrl) return;
+  alert('Opening your complete gallery folder in Google Drive — select all and download as a zip from there.');
+  window.open(currentGalleryFolderUrl, '_blank');
 }
 
 function downloadAllCurrentTab(){
