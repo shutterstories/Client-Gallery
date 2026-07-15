@@ -233,6 +233,7 @@
         <div>📤 Click or drag photos here to upload</div>
         <input type="file" id="fileInput" multiple accept="image/*" onchange="handleFiles(this.files)">
       </div>
+      <div class="center-msg" id="noEventMsg" style="display:none;">↑ Type an event name above and click "+ Add Event" before uploading.</div>
       <div class="progress-text" id="progressText"></div>
 
       <div class="admin-photo-grid" id="adminPhotoGrid"></div>
@@ -471,6 +472,13 @@ function copyClientLink(){
   navigator.clipboard.writeText(link).then(()=> alert('Link copied!'));
 }
 
+function updateUploadBoxVisibility(){
+  const box = document.getElementById('uploadBox');
+  const msg = document.getElementById('noEventMsg');
+  box.style.display = currentManagedEventType ? 'block' : 'none';
+  msg.style.display = currentManagedEventType ? 'none' : 'block';
+}
+
 function renderEventPills(){
   const row = document.getElementById('eventPillRow');
   row.innerHTML = currentManagedEvents.map(ev => `
@@ -479,6 +487,7 @@ function renderEventPills(){
       <span onclick="deleteEventType('${ev.replace(/'/g,"\\'")}')" style="margin-left:8px; opacity:.6; cursor:pointer;" title="Delete this event">✕</span>
     </div>
   `).join('');
+  updateUploadBoxVisibility();
 }
 
 function deleteEventType(ev){
@@ -559,6 +568,10 @@ function deletePhoto(fileId){
 let uploadErrors = [];
 
 function handleFiles(fileList){
+  if(!currentManagedEventType){
+    alert('Please add an event name first (type it above and click "+ Add Event") before uploading photos.');
+    return;
+  }
   const files = Array.from(fileList);
   if(files.length===0) return;
   uploadErrors = [];
