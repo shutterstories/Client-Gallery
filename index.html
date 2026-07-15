@@ -206,6 +206,12 @@
           <button class="btn primary" onclick="createCollection()" style="width:100%; justify-content:center;">+ Create Collection</button>
         </div>
       </div>
+      <div class="form-row full">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="newIsPublic" style="width:auto;">
+          <span>Show this collection on my public portfolio homepage</span>
+        </label>
+      </div>
     </div>
 
     <div class="card">
@@ -325,11 +331,12 @@ function loadHomeCollections(){
 
 function renderHomeGrid(collections, filter){
   const grid = document.getElementById('homeGrid');
-  const filtered = filter==='all' ? collections : collections.filter(c=>c.category===filter);
-  if(filtered.length===0){ grid.innerHTML = '<div class="center-msg">No collections yet.</div>'; return; }
+  const publicOnly = collections.filter(c => c.isPublic);
+  const filtered = filter==='all' ? publicOnly : publicOnly.filter(c=>c.category===filter);
+  if(filtered.length===0){ grid.innerHTML = '<div class="center-msg">No portfolio pieces published yet.</div>'; return; }
   grid.innerHTML = filtered.map(c => `
     <div class="collection-card" onclick="location.href='?gallery=${c.id}'">
-      <div class="collection-cover" style="${c.coverFileId ? `background-image:url('https://drive.google.com/uc?export=view&id=${c.coverFileId}')` : ''}">
+      <div class="collection-cover" style="${c.coverFileId ? `background-image:url('https://drive.google.com/thumbnail?id=${c.coverFileId}&sz=w1000')` : ''}">
         <span class="tag">${(c.category||'').toUpperCase()}</span>
       </div>
       <div class="collection-info">
@@ -380,13 +387,21 @@ function loadAdminCollections(){
     list.innerHTML = res.collections.map(c => `
       <div class="collection-list-row">
         <div>
-          <div class="name">${c.clientName}</div>
+          <div class="name">${c.clientName} ${c.isPublic ? '<span style="font-size:10px; color:var(--gold); letter-spacing:1px;">● PORTFOLIO</span>' : ''}</div>
           <div class="meta">${c.category} · ${c.eventDate}</div>
         </div>
         <div class="row-actions">
+          <button class="btn" onclick="togglePortfolio('${c.id}', ${!c.isPublic})">${c.isPublic ? 'Remove from Portfolio' : 'Add to Portfolio'}</button>
           <button class="btn" onclick="openManager('${c.id}','${c.clientName.replace(/'/g,"\\'")}','${c.eventDate}')">Manage</button>
         </div>
       </div>`).join('');
+  });
+}
+
+function togglePortfolio(folderId, makePublic){
+  api({action:'setVisibility', password:adminPassword, folderId, isPublic:makePublic}).then(res=>{
+    if(res.success) loadAdminCollections();
+    else alert('Error updating portfolio visibility.');
   });
 }
 
@@ -394,11 +409,13 @@ function createCollection(){
   const clientName = document.getElementById('newClientName').value.trim();
   const eventDate = document.getElementById('newEventDate').value;
   const category = document.getElementById('newCategory').value;
+  const isPublic = document.getElementById('newIsPublic').checked;
   if(!clientName || !eventDate){ alert('Please enter client name and date.'); return; }
-  api({action:'createCollection', password:adminPassword, clientName, eventDate, category}).then(res=>{
+  api({action:'createCollection', password:adminPassword, clientName, eventDate, category, isPublic}).then(res=>{
     if(res.success){
       document.getElementById('newClientName').value='';
       document.getElementById('newEventDate').value='';
+      document.getElementById('newIsPublic').checked=false;
       loadAdminCollections();
     } else {
       alert('Error: ' + (res.error||'could not create'));
@@ -416,8 +433,7 @@ function openManager(folderId, clientName, eventDate){
 
   api({action:'getCollectionMeta', folderId}).then(res=>{
     currentManagedEvents = res.events.map(e=>e.name);
-    if(currentManagedEvents.length===0) currentManagedEvents = ['Wedding'];
-    currentManagedEventType = currentManagedEvents[0];
+    currentManagedEventType = currentManagedEvents[0] || null;
     renderEventPills();
     loadAdminPhotos();
   });
@@ -431,8 +447,21 @@ function copyClientLink(){
 function renderEventPills(){
   const row = document.getElementById('eventPillRow');
   row.innerHTML = currentManagedEvents.map(ev => `
-    <div class="event-pill ${ev===currentManagedEventType?'active':''}" onclick="selectManagedEvent('${ev.replace(/'/g,"\\'")}')">${ev}</div>
+    <div class="event-pill ${ev===currentManagedEventType?'active':''}">
+      <span onclick="selectManagedEvent('${ev.replace(/'/g,"\\'")}')">${ev}</span>
+      <span onclick="deleteEventType('${ev.replace(/'/g,"\\'")}')" style="margin-left:8px; opacity:.6; cursor:pointer;" title="Delete this event">✕</span>
+    </div>
   `).join('');
+}
+
+function deleteEventType(ev){
+  if(!confirm(`Delete "${ev}" and all its photos? This cannot be undone.`)) return;
+  api({action:'deleteEvent', password:adminPassword, folderId:currentManagedFolderId, eventType:ev}).then(res=>{
+    currentManagedEvents = currentManagedEvents.filter(e=>e!==ev);
+    if(currentManagedEventType===ev) currentManagedEventType = currentManagedEvents[0] || null;
+    renderEventPills();
+    loadAdminPhotos();
+  });
 }
 
 function selectManagedEvent(ev){
@@ -453,6 +482,7 @@ function addEventType(){
 
 function loadAdminPhotos(){
   const grid = document.getElementById('adminPhotoGrid');
+  if(!currentManagedEventType){ grid.innerHTML = '<div class="center-msg">Add an event name above to start uploading.</div>'; return; }
   grid.innerHTML = '<div class="center-msg">Loading photos…</div>';
   api({action:'listPhotos', folderId:currentManagedFolderId, eventType:currentManagedEventType, resolution:'compressed'}).then(res=>{
     if(!res.success){ grid.innerHTML=''; return; }
@@ -564,7 +594,7 @@ function openClientGallery(folderId){
     document.getElementById('galClientName').textContent = res.clientName;
     if(res.coverFileId){
       document.getElementById('galleryCover').style.backgroundImage =
-        `url('https://drive.google.com/uc?export=view&id=${res.coverFileId}')`;
+        `url('https://drive.google.com/thumbnail?id=${res.coverFileId}&sz=w1000')`;
     }
     currentGalleryEvents = res.events.map(e=>e.name);
     currentGalleryEventType = currentGalleryEvents[0] || null;
