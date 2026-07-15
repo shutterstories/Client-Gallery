@@ -282,12 +282,12 @@
       <h2 id="galClientName">—</h2>
       <div class="meta" id="galSub" style="font-size:11px; letter-spacing:2px; color:var(--ink-soft);">PRIVATE GALLERY</div>
     </div>
-    <button class="btn primary" style="font-size:10px; padding:7px 12px;" onclick="downloadEntireGallery()">⬇ Download All Folders</button>
+    <button class="btn primary" id="galDownloadAllBtn" style="font-size:10px; padding:7px 12px;" onclick="downloadEntireGallery()">⬇ Download All Folders</button>
   </div>
   <div id="galVideoContainer"></div>
   <div class="event-tabs" id="galEventTabs"></div>
   <div class="photo-grid" id="galPhotoGrid"></div>
-  <div class="download-bar">
+  <div class="download-bar" id="galDownloadBar">
     <div>Resolution:</div>
     <div class="res-toggle" id="galResToggle">
       <button class="active" data-res="compressed">Compressed (web)</button>
@@ -340,9 +340,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   const params = new URLSearchParams(location.search);
   const galleryId = params.get('gallery');
+  const isShowcaseView = params.get('view') === 'portfolio';
   if(galleryId){
     document.getElementById('topNavLinks').style.display = 'none';
-    openClientGallery(galleryId);
+    openClientGallery(galleryId, isShowcaseView);
   } else {
     loadHomeCollections();
   }
@@ -371,7 +372,7 @@ function renderHomeGrid(collections, filter){
   const filtered = filter==='all' ? publicOnly : publicOnly.filter(c=>c.category===filter);
   if(filtered.length===0){ grid.innerHTML = '<div class="center-msg">No portfolio pieces published yet.</div>'; return; }
   grid.innerHTML = filtered.map(c => `
-    <div class="collection-card" onclick="location.href='?gallery=${c.id}'">
+    <div class="collection-card" onclick="location.href='?gallery=${c.id}&view=portfolio'">
       <div class="collection-cover" style="${c.coverFileId ? `background-image:url('https://drive.google.com/thumbnail?id=${c.coverFileId}&sz=w1000')` : ''}">
         <span class="tag">${(c.category||'').toUpperCase()}</span>
       </div>
@@ -422,9 +423,14 @@ function loadAdminCollections(){
     if(res.collections.length===0){ list.innerHTML = '<div class="center-msg">No collections yet — create one above.</div>'; return; }
     list.innerHTML = res.collections.map(c => `
       <div class="collection-list-row">
-        <div>
-          <div class="name">${c.clientName} ${c.isPublic ? '<span style="font-size:10px; color:var(--gold); letter-spacing:1px;">● PORTFOLIO</span>' : ''}</div>
-          <div class="meta">${c.category} · ${c.eventDate}</div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="width:52px; height:52px; border-radius:4px; overflow:hidden; flex-shrink:0; background:var(--line);">
+            ${c.coverFileId ? `<img src="https://drive.google.com/thumbnail?id=${c.coverFileId}&sz=w200" style="width:100%; height:100%; object-fit:cover; display:block;">` : ''}
+          </div>
+          <div>
+            <div class="name">${c.clientName} ${c.isPublic ? '<span style="font-size:10px; color:var(--gold); letter-spacing:1px;">● PORTFOLIO</span>' : ''}</div>
+            <div class="meta">${c.category} · ${c.eventDate}</div>
+          </div>
         </div>
         <div class="row-actions">
           <button class="btn" onclick="togglePortfolio('${c.id}', ${!c.isPublic})">${c.isPublic ? 'Remove from Portfolio' : 'Add to Portfolio'}</button>
@@ -806,7 +812,9 @@ uploadBox.addEventListener('drop', e=>{
 });
 
 /* ================= CLIENT GALLERY (public link) ================= */
-function openClientGallery(folderId){
+let currentGalleryIsPublic = false;
+
+function openClientGallery(folderId, isShowcaseView){
   currentGalleryFolderId = folderId;
   showPage('clientGalleryPage');
   api({action:'getCollectionMeta', folderId}).then(res=>{
@@ -820,6 +828,9 @@ function openClientGallery(folderId){
         `url('https://drive.google.com/thumbnail?id=${res.coverFileId}&sz=w1000')`;
     }
     currentGalleryFolderUrl = res.folderUrl;
+    currentGalleryIsPublic = !!isShowcaseView;
+    document.getElementById('galDownloadAllBtn').style.display = currentGalleryIsPublic ? 'none' : 'inline-flex';
+    document.getElementById('galDownloadBar').style.display = currentGalleryIsPublic ? 'none' : 'flex';
     const videoContainer = document.getElementById('galVideoContainer');
     videoContainer.innerHTML = res.videoFileId
       ? `<div style="padding:20px 6vw;"><iframe src="https://drive.google.com/file/d/${res.videoFileId}/preview" width="100%" height="480" style="border:none; border-radius:4px;" allow="autoplay"></iframe></div>`
@@ -892,11 +903,14 @@ function renderPhotoGridDisplay(displayPhotos, downloadSourcePhotos){
 
   grid.innerHTML = displayPhotos.map(p => {
     const dlUrl = downloadMap[p.name];
+    const downloadIcon = currentGalleryIsPublic
+      ? ''
+      : (dlUrl ? `<a class="icon-btn" href="${dlUrl}" target="_blank" title="Download this photo">⬇</a>` : `<span class="icon-btn" title="Expired">🔒</span>`);
     return `
       <div class="photo-tile">
         <img src="${p.viewUrl}" loading="lazy" onclick="openLightbox('${p.viewUrl.replace(/'/g,"")}')">
         <div class="hover-actions">
-          ${dlUrl ? `<a class="icon-btn" href="${dlUrl}" target="_blank" title="Download this photo">⬇</a>` : `<span class="icon-btn" title="Expired">🔒</span>`}
+          ${downloadIcon}
         </div>
       </div>`;
   }).join('');
