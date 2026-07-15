@@ -36,6 +36,7 @@
   .avatar{width:88px; height:88px; border-radius:50%; margin:0 auto 20px; background:linear-gradient(135deg,#2b3a5c,#0A1B33); border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond'; font-size:30px; color:var(--gold-soft);}
   .home-hero h1{font-family:'Cormorant Garamond', serif; font-size:clamp(28px,5vw,46px); letter-spacing:3px; font-weight:600;}
   .home-hero .tagline{margin-top:8px; color:var(--gold-soft); font-size:12px; letter-spacing:3px; text-transform:uppercase;}
+  .home-hero .scroll-hint{margin-top:14px; color:#8b92a8; font-size:9px; letter-spacing:.5px; text-transform:none;}
   .dot-strip{height:8px; background-image:repeating-linear-gradient(90deg, var(--gold) 0 8px, transparent 8px 16px);}
   .cat-filter{display:flex; justify-content:center; gap:30px; padding:30px 5vw 10px; flex-wrap:wrap;}
   .cat-filter button{background:none; border:none; font-size:13px; letter-spacing:1px; color:var(--ink-soft); padding-bottom:10px; border-bottom:2px solid transparent; cursor:pointer;}
@@ -178,6 +179,7 @@
     <div class="avatar">SS</div>
     <h1>Shutter Stories</h1>
     <div class="tagline">Wedding &amp; Event Photography</div>
+    <div class="scroll-hint">Scroll to the bottom for our contact details.</div>
   </div>
   <div class="dot-strip"></div>
   <div class="cat-filter" id="homeCatFilter">
@@ -216,7 +218,7 @@
         </div>
       </div>
       <div class="qr-block">
-        <img src="instagram_qr.png" alt="Scan to follow Shutter Stories on Instagram">
+        <img src="data:image/png;base64,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" alt="Scan to follow Shutter Stories on Instagram">
         <div class="qr-caption">Scan to Follow Us</div>
       </div>
     </div>
