@@ -164,6 +164,7 @@
   <div class="brand" onclick="goHome()">SHUTTER STORIES</div>
   <div class="nav-links" id="topNavLinks">
     <span onclick="goHome()">Portfolio</span>
+    <span onclick="openQuoteModal()" style="color:var(--gold); font-weight:600;">Get Quote</span>
     <span onclick="goAdmin()">Studio Login</span>
   </div>
 </div>
@@ -222,7 +223,10 @@
         <div class="qr-caption">Scan to Follow Us</div>
       </div>
     </div>
-    <a class="contact-cta-btn" href="https://wa.me/919964052479" target="_blank">Enquire Now</a>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-top:40px;">
+      <button class="contact-cta-btn" style="border:none; cursor:pointer;" onclick="openQuoteModal()">Get a Quote</button>
+      <a class="contact-cta-btn" style="background:transparent; color:var(--gold-soft);" href="https://wa.me/919964052479" target="_blank">WhatsApp Us</a>
+    </div>
     <div class="contact-footer-note">© Shutter Stories — Wedding &amp; Event Photography, Mangalore</div>
   </div>
 </div>
@@ -360,10 +364,112 @@
   </div>
 </div>
 
+<!-- ============ GET QUOTE MODAL ============ -->
+<div id="quoteModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(10,27,51,0.75); z-index:300; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this) closeQuoteModal()">
+  <div style="background:var(--paper-2); max-width:420px; width:100%; border-radius:6px; padding:32px 28px; position:relative; max-height:90vh; overflow-y:auto;">
+    <div onclick="closeQuoteModal()" style="position:absolute; top:16px; right:18px; cursor:pointer; font-size:20px; color:var(--ink-soft);">✕</div>
+    <div id="quoteFormView">
+      <h2 style="font-family:'Cormorant Garamond'; font-size:26px; color:var(--navy); margin-bottom:6px;">Get a Personalized Quote</h2>
+      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:22px; letter-spacing:.3px;">Tell us a bit about your event and we'll get back to you with a tailored quotation.</p>
+
+      <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin-bottom:6px;">YOUR NAME</label>
+      <input id="qName" placeholder="e.g. Pushkar Rao" style="width:100%; padding:11px 13px; border:1px solid var(--line); margin-bottom:14px; font-family:'Poppins'; font-size:13px;">
+
+      <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin-bottom:6px;">PHONE / WHATSAPP NUMBER</label>
+      <input id="qPhone" placeholder="e.g. 98765 43210" style="width:100%; padding:11px 13px; border:1px solid var(--line); margin-bottom:14px; font-family:'Poppins'; font-size:13px;">
+
+      <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin-bottom:6px;">EVENT TYPE</label>
+      <select id="qEventType" style="width:100%; padding:11px 13px; border:1px solid var(--line); margin-bottom:14px; font-family:'Poppins'; font-size:13px; background:var(--paper);">
+        <option value="">Select event type</option>
+        <option>Wedding</option>
+        <option>Engagement</option>
+        <option>Pre-Wedding Shoot</option>
+        <option>Maternity Shoot</option>
+        <option>Birthday</option>
+        <option>Baby Shower</option>
+        <option>Other</option>
+      </select>
+
+      <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin-bottom:6px;">EVENT DATE</label>
+      <input id="qEventDate" type="date" style="width:100%; padding:11px 13px; border:1px solid var(--line); margin-bottom:14px; font-family:'Poppins'; font-size:13px;">
+
+      <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin-bottom:6px;">ANYTHING ELSE WE SHOULD KNOW? (OPTIONAL)</label>
+      <input id="qMessage" placeholder="e.g. Venue, guest count, specific requirements" style="width:100%; padding:11px 13px; border:1px solid var(--line); margin-bottom:18px; font-family:'Poppins'; font-size:13px;">
+
+      <button onclick="submitQuoteForm()" id="qSubmitBtn" style="width:100%; padding:13px; background:var(--navy); color:var(--paper-2); border:none; letter-spacing:1px; font-size:13px; border-radius:3px; cursor:pointer;">Submit Enquiry</button>
+      <div id="qFormErr" style="color:#B23B3B; font-size:11px; margin-top:8px; text-align:center;"></div>
+    </div>
+
+    <div id="quoteThanksView" style="display:none; text-align:center; padding:20px 0;">
+      <div style="font-size:40px; margin-bottom:12px;">🎉</div>
+      <h2 style="font-family:'Cormorant Garamond'; font-size:24px; color:var(--navy); margin-bottom:8px;">Thank You!</h2>
+      <p style="font-size:13px; color:var(--ink-soft); line-height:1.6;">We've received your details and will reach out shortly with a personalized quotation.</p>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ================= CONFIG ================= */
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwcMZyt7BR45r-3Afm2RX66U0LswESWDyLYT2k3zq2G0zIEVeN72ukn2GQnMhHJJ8zdhA/exec";
+const ENQUIRY_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbye6b4Ev0cD9tcEweiTMd_uZVi74N0ygoKZLM0rCUHa8YZDYPbsbrmNsW-NPNz7Ms7B8Q/exec";
 /* =========================================== */
+
+function openQuoteModal(){
+  document.getElementById('quoteModalOverlay').style.display = 'flex';
+  document.getElementById('quoteFormView').style.display = 'block';
+  document.getElementById('quoteThanksView').style.display = 'none';
+  document.getElementById('qFormErr').textContent = '';
+}
+
+function closeQuoteModal(){
+  document.getElementById('quoteModalOverlay').style.display = 'none';
+}
+
+function submitQuoteForm(){
+  const name = document.getElementById('qName').value.trim();
+  const phone = document.getElementById('qPhone').value.trim();
+  const eventType = document.getElementById('qEventType').value;
+  const eventDate = document.getElementById('qEventDate').value;
+  const message = document.getElementById('qMessage').value.trim();
+  const errBox = document.getElementById('qFormErr');
+
+  if(!name || !phone || !eventType){
+    errBox.textContent = 'Please fill in your name, phone number, and event type.';
+    return;
+  }
+
+  if(ENQUIRY_WEBAPP_URL.indexOf('PASTE_YOUR') === 0){
+    errBox.textContent = 'Enquiry backend not connected yet — contact the studio directly for now.';
+    return;
+  }
+
+  const btn = document.getElementById('qSubmitBtn');
+  btn.textContent = 'Submitting…';
+  btn.disabled = true;
+
+  fetch(ENQUIRY_WEBAPP_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action:'submitEnquiry', name, phone, eventType, eventDate, message })
+  }).then(r => r.json()).then(res => {
+    btn.textContent = 'Submit Enquiry';
+    btn.disabled = false;
+    if(res.success){
+      document.getElementById('quoteFormView').style.display = 'none';
+      document.getElementById('quoteThanksView').style.display = 'block';
+      document.getElementById('qName').value = '';
+      document.getElementById('qPhone').value = '';
+      document.getElementById('qEventType').value = '';
+      document.getElementById('qEventDate').value = '';
+      document.getElementById('qMessage').value = '';
+    } else {
+      errBox.textContent = 'Something went wrong. Please try again or WhatsApp us directly.';
+    }
+  }).catch(()=>{
+    btn.textContent = 'Submit Enquiry';
+    btn.disabled = false;
+    errBox.textContent = 'Network error. Please try again or WhatsApp us directly.';
+  });
+}
 
 let adminPassword = sessionStorage.getItem('ss_admin_pass') || '';
 let currentManagedFolderId = null;
