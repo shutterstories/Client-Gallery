@@ -109,10 +109,11 @@
   .photo-tile .hover-actions{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(10,27,51,0); opacity:0; transition:all .25s;}
   .photo-tile:hover .hover-actions{background:rgba(10,27,51,0.35); opacity:1;}
   .icon-btn{width:34px; height:34px; border-radius:50%; background:rgba(247,243,234,0.92); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--navy); cursor:pointer;}
-  .download-bar{position:sticky; bottom:0; background:var(--navy); color:var(--paper-2); padding:16px 6vw; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12px;}
-  .res-toggle{display:flex; gap:8px;}
-  .res-toggle button{font-size:11px; letter-spacing:1px; padding:8px 14px; border-radius:20px; border:1px solid rgba(230,211,161,0.4); background:transparent; color:var(--gold-soft); cursor:pointer;}
+  .download-bar{position:sticky; bottom:0; background:var(--navy); color:var(--paper-2); padding:8px 6vw; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:10px;}
+  .res-toggle{display:flex; gap:6px;}
+  .res-toggle button{font-size:9px; letter-spacing:.5px; padding:5px 10px; border-radius:16px; border:1px solid rgba(230,211,161,0.4); background:transparent; color:var(--gold-soft); cursor:pointer;}
   .res-toggle button.active{background:var(--gold); color:var(--navy); border-color:var(--gold);}
+  .download-bar .btn{font-size:10px; padding:6px 12px;}
 
   @media (max-width:720px){
     .photo-grid{grid-template-columns:repeat(2,1fr);}
@@ -127,7 +128,7 @@
 
 <div class="topbar">
   <div class="brand" onclick="goHome()">SHUTTER STORIES</div>
-  <div class="nav-links">
+  <div class="nav-links" id="topNavLinks">
     <span onclick="goHome()">Portfolio</span>
     <span onclick="goAdmin()">Studio Login</span>
   </div>
@@ -221,6 +222,13 @@
         <button class="btn" onclick="addEventType()">+ Add Event</button>
       </div>
 
+      <div class="card" style="background:var(--paper);">
+        <h3 style="font-size:16px;">Highlight Video (optional)</h3>
+        <div id="videoStatus" style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">No video uploaded yet.</div>
+        <input type="file" id="videoFileInput" accept="video/*" onchange="handleVideoUpload(this.files[0])">
+        <div class="progress-text" id="videoProgressText"></div>
+      </div>
+
       <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
         <div>📤 Click or drag photos here to upload</div>
         <input type="file" id="fileInput" multiple accept="image/*" onchange="handleFiles(this.files)">
@@ -248,6 +256,7 @@
     </div>
     <button class="btn primary" onclick="downloadEntireGallery()">⬇ Download Entire Gallery</button>
   </div>
+  <div id="galVideoContainer"></div>
   <div class="event-tabs" id="galEventTabs"></div>
   <div class="photo-grid" id="galPhotoGrid"></div>
   <div class="download-bar">
@@ -304,6 +313,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(location.search);
   const galleryId = params.get('gallery');
   if(galleryId){
+    document.getElementById('topNavLinks').style.display = 'none';
     openClientGallery(galleryId);
   } else {
     loadHomeCollections();
@@ -434,6 +444,25 @@ function openManager(folderId, clientName, eventDate){
     currentManagedEventType = currentManagedEvents[0] || null;
     renderEventPills();
     loadAdminPhotos();
+    document.getElementById('videoStatus').textContent = res.videoFileId ? 'Video uploaded ✓ (uploading a new one will replace it)' : 'No video uploaded yet.';
+  });
+}
+
+function handleVideoUpload(file){
+  if(!file) return;
+  const progress = document.getElementById('videoProgressText');
+  progress.textContent = 'Uploading video…';
+  fileToBase64(file).then(base64Data=>{
+    api({action:'uploadVideo', password:adminPassword, folderId:currentManagedFolderId, fileName:file.name, mimeType:file.type, base64Data}).then(res=>{
+      if(res.success){
+        progress.textContent = 'Video uploaded!';
+        document.getElementById('videoStatus').textContent = 'Video uploaded ✓ (uploading a new one will replace it)';
+      } else {
+        progress.textContent = 'Error: ' + (res.error||'upload failed');
+      }
+    });
+  }).catch(err=>{
+    progress.textContent = 'Error reading file: ' + err.message;
   });
 }
 
@@ -527,17 +556,23 @@ function deletePhoto(fileId){
   api({action:'deletePhoto', password:adminPassword, fileId}).then(()=> loadAdminPhotos());
 }
 
-/* ---------- Upload with auto full + compressed versions ---------- */
+let uploadErrors = [];
+
 function handleFiles(fileList){
   const files = Array.from(fileList);
   if(files.length===0) return;
+  uploadErrors = [];
   uploadQueue(files, 0);
 }
 
 function uploadQueue(files, index){
   const progress = document.getElementById('progressText');
   if(index >= files.length){
-    progress.textContent = 'Upload complete!';
+    if(uploadErrors.length===0){
+      progress.textContent = 'Upload complete!';
+    } else {
+      progress.textContent = `Upload finished with ${uploadErrors.length} error(s): ${uploadErrors.join('; ')}`;
+    }
     loadAdminPhotos();
     return;
   }
@@ -558,9 +593,17 @@ function uploadQueue(files, index){
       eventType:currentManagedEventType, resolution:'compressed',
       fileName:file.name, mimeType:'image/jpeg', base64Data:compressed
     });
-    Promise.all([uploadFull, uploadCompressed]).then(()=>{
+    Promise.all([uploadFull, uploadCompressed]).then(([r1, r2])=>{
+      if(!r1.success) uploadErrors.push(file.name + ' (full: ' + (r1.error||'failed') + ')');
+      if(!r2.success) uploadErrors.push(file.name + ' (compressed: ' + (r2.error||'failed') + ')');
+      uploadQueue(files, index+1);
+    }).catch(err=>{
+      uploadErrors.push(file.name + ' (network error: ' + err.message + ')');
       uploadQueue(files, index+1);
     });
+  }).catch(err=>{
+    uploadErrors.push(file.name + ' (read error: ' + err.message + ')');
+    uploadQueue(files, index+1);
   });
 }
 
@@ -616,6 +659,10 @@ function openClientGallery(folderId){
         `url('https://drive.google.com/thumbnail?id=${res.coverFileId}&sz=w1000')`;
     }
     currentGalleryFolderUrl = res.folderUrl;
+    const videoContainer = document.getElementById('galVideoContainer');
+    videoContainer.innerHTML = res.videoFileId
+      ? `<div style="padding:20px 6vw;"><iframe src="https://drive.google.com/file/d/${res.videoFileId}/preview" width="100%" height="480" style="border:none; border-radius:4px;" allow="autoplay"></iframe></div>`
+      : '';
     currentGalleryEvents = res.events.map(e=>e.name);
     currentGalleryEventType = currentGalleryEvents[0] || null;
     renderGalleryTabs();
