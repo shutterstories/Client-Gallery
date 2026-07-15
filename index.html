@@ -49,6 +49,30 @@
   .collection-info h3{font-family:'Cormorant Garamond'; font-size:20px; color:var(--navy); font-weight:600;}
   .collection-info p{font-size:11px; color:var(--ink-soft); margin-top:4px; letter-spacing:.5px;}
 
+  /* ===== CONTACT / FOOTER SECTION (last section of the public portfolio) ===== */
+  .contact-section{background:linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%); color:var(--paper-2); padding:70px 6vw 50px; text-align:center;}
+  .contact-section .dot-strip-top{height:8px; background-image:repeating-linear-gradient(90deg, var(--gold) 0 8px, transparent 8px 16px);}
+  .contact-eyebrow{font-size:12px; letter-spacing:3px; color:var(--gold-soft); text-transform:uppercase; margin-bottom:14px;}
+  .contact-section h2{font-family:'Cormorant Garamond', serif; font-size:clamp(24px,4vw,36px); font-weight:600; max-width:640px; margin:0 auto 36px; line-height:1.35;}
+  .contact-grid{display:flex; justify-content:center; align-items:flex-start; gap:60px; flex-wrap:wrap; max-width:900px; margin:0 auto;}
+  .contact-details{text-align:left; display:flex; flex-direction:column; gap:18px; min-width:220px;}
+  .contact-row{display:flex; align-items:center; gap:12px; font-size:14px; letter-spacing:.5px;}
+  .contact-row .c-icon{width:36px; height:36px; border-radius:50%; border:1px solid rgba(230,211,161,0.4); display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--gold-soft); flex-shrink:0;}
+  .contact-row a{color:var(--paper-2); transition:color .2s;}
+  .contact-row a:hover{color:var(--gold-soft);}
+  .contact-row .c-label{font-size:9px; letter-spacing:2px; color:var(--gold-soft); text-transform:uppercase; display:block; margin-bottom:2px;}
+  .qr-block{text-align:center;}
+  .qr-block img{width:140px; height:140px; background:var(--paper-2); padding:10px; border-radius:6px; display:block; margin:0 auto 10px;}
+  .qr-block .qr-caption{font-size:11px; letter-spacing:1.5px; color:var(--gold-soft); text-transform:uppercase;}
+  .contact-cta-btn{display:inline-block; margin-top:40px; padding:14px 34px; border:1px solid var(--gold); color:var(--navy); background:var(--gold); font-size:12px; letter-spacing:2px; text-transform:uppercase; border-radius:3px; transition:all .25s;}
+  .contact-cta-btn:hover{background:transparent; color:var(--gold-soft);}
+  .contact-footer-note{margin-top:34px; font-size:10px; letter-spacing:1px; color:#8b92a8;}
+
+  @media (max-width:600px){
+    .contact-grid{flex-direction:column; align-items:center; gap:36px;}
+    .contact-details{align-items:flex-start;}
+  }
+
   /* ===== ADMIN LOGIN ===== */
   .admin-lock{max-width:360px; margin:100px auto; text-align:center; padding:36px 28px; background:var(--paper-2); border:1px solid var(--line);}
   .admin-lock h2{font-family:'Cormorant Garamond'; color:var(--navy); font-size:24px; margin-bottom:6px;}
@@ -161,6 +185,43 @@
   </div>
   <div class="collections-grid" id="homeGrid">
     <div class="center-msg">Loading collections…</div>
+  </div>
+
+  <!-- ============ CONTACT SECTION (last section of the public portfolio) ============ -->
+  <div class="contact-section">
+    <div class="contact-eyebrow">Get In Touch</div>
+    <h2>Contact us to discuss your requirements and receive a personalized quotation.</h2>
+    <div class="contact-grid">
+      <div class="contact-details">
+        <div class="contact-row">
+          <div class="c-icon">📞</div>
+          <div>
+            <span class="c-label">Call / WhatsApp</span>
+            <a href="tel:+919964052479">+91 99640 52479</a>
+          </div>
+        </div>
+        <div class="contact-row">
+          <div class="c-icon">✉️</div>
+          <div>
+            <span class="c-label">Email</span>
+            <a href="mailto:shutterstories@gmail.com">shutterstories@gmail.com</a>
+          </div>
+        </div>
+        <div class="contact-row">
+          <div class="c-icon">📷</div>
+          <div>
+            <span class="c-label">Instagram</span>
+            <a href="https://instagram.com/shutter_stories__" target="_blank">@shutter_stories__</a>
+          </div>
+        </div>
+      </div>
+      <div class="qr-block">
+        <img src="instagram_qr.png" alt="Scan to follow Shutter Stories on Instagram">
+        <div class="qr-caption">Scan to Follow Us</div>
+      </div>
+    </div>
+    <a class="contact-cta-btn" href="https://wa.me/919964052479" target="_blank">Enquire Now</a>
+    <div class="contact-footer-note">© Shutter Stories — Wedding &amp; Event Photography, Mangalore</div>
   </div>
 </div>
 
