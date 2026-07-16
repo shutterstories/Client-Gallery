@@ -41,14 +41,26 @@
   .cat-filter{display:flex; justify-content:center; gap:30px; padding:30px 5vw 10px; flex-wrap:wrap;}
   .cat-filter button{background:none; border:none; font-size:13px; letter-spacing:1px; color:var(--ink-soft); padding-bottom:10px; border-bottom:2px solid transparent; cursor:pointer;}
   .cat-filter button.active{color:var(--navy); border-color:var(--gold); font-weight:600;}
-  .collections-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:24px; padding:20px 5vw 80px;}
+  .collections-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; padding:20px 5vw 80px;}
   .collection-card{background:var(--paper-2); border:1px solid var(--line); border-radius:4px; overflow:hidden; cursor:pointer; transition:transform .3s, box-shadow .3s;}
   .collection-card:hover{transform:translateY(-4px); box-shadow:0 16px 32px rgba(10,27,51,0.12);}
-  .collection-cover{height:200px; position:relative; background:linear-gradient(160deg,#d9c9a3,#b9895a) center/cover; display:flex; align-items:flex-end;}
-  .collection-cover .tag{position:absolute; top:12px; left:12px; background:rgba(10,27,51,0.7); color:var(--gold-soft); font-size:10px; letter-spacing:1.5px; padding:5px 10px; border-radius:20px;}
-  .collection-info{padding:16px 18px 20px;}
-  .collection-info h3{font-family:'Cormorant Garamond'; font-size:20px; color:var(--navy); font-weight:600;}
-  .collection-info p{font-size:11px; color:var(--ink-soft); margin-top:4px; letter-spacing:.5px;}
+  .collection-cover{height:130px; position:relative; background:linear-gradient(160deg,#d9c9a3,#b9895a) center/cover; display:flex; align-items:flex-end;}
+  .collection-cover .tag{position:absolute; top:8px; left:8px; background:rgba(10,27,51,0.7); color:var(--gold-soft); font-size:8px; letter-spacing:1px; padding:3px 7px; border-radius:20px;}
+  .collection-info{padding:10px 12px 12px;}
+  .collection-info h3{font-family:'Cormorant Garamond'; font-size:15px; color:var(--navy); font-weight:600; line-height:1.2;}
+  .collection-info p{font-size:9px; color:var(--ink-soft); margin-top:3px; letter-spacing:.3px;}
+
+  @media (max-width:900px){
+    .collections-grid{grid-template-columns:repeat(3,1fr); gap:10px;}
+    .collection-cover{height:110px;}
+  }
+  @media (max-width:600px){
+    .collections-grid{grid-template-columns:repeat(3,1fr); gap:8px; padding:14px 4vw 60px;}
+    .collection-cover{height:90px;}
+    .collection-info{padding:8px 8px 10px;}
+    .collection-info h3{font-size:12px;}
+    .collection-info p{font-size:8px;}
+  }
 
   /* ===== CONTACT / FOOTER SECTION (last section of the public portfolio) ===== */
   .contact-section{background:linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%); color:var(--paper-2); padding:70px 6vw 50px; text-align:center;}
@@ -411,7 +423,10 @@
 <script>
 /* ================= CONFIG ================= */
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwcMZyt7BR45r-3Afm2RX66U0LswESWDyLYT2k3zq2G0zIEVeN72ukn2GQnMhHJJ8zdhA/exec";
-const ENQUIRY_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwd8-rVtdSi8xrSWiLBHUXChcDVRtFvVx_MHXUB6d_OSqmQHf_NajyYrsKRte_yuZFm/exec";
+// Direct link to the live site (GitHub Pages) — used for client-facing links so they open
+// as a normal webpage on any phone/app, instead of routing through script.google.com.
+const SITE_URL = "https://shutterstories.github.io/Client-Gallery/";
+const ENQUIRY_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxI7Rq9_5SG8PnzLeQDQaKK51aD31FcjNUUNM38KSGZ7kwC9j3Gsf3qabK7RKg3hwx5-w/exec";
 /* =========================================== */
 
 function openQuoteModal(){
@@ -638,7 +653,7 @@ function openManager(folderId, clientName, eventDate){
   currentManagedFolderId = folderId;
   document.getElementById('collectionManager').style.display='block';
   document.getElementById('cmTitle').textContent = 'Manage: ' + clientName;
-  const link = WEBAPP_URL + '?gallery=' + folderId;
+  const link = SITE_URL + '?gallery=' + folderId;
   document.getElementById('cmLink').textContent = link;
   document.getElementById('collectionManager').dataset.link = link;
 
