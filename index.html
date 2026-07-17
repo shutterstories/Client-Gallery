@@ -782,10 +782,12 @@ function loadAdminPhotos(){
   if(!currentManagedEventType){ grid.innerHTML = '<div class="center-msg">Add an event name above to start uploading.</div>'; return; }
   grid.innerHTML = '<div class="center-msg">Loading photos…</div>';
   api({action:'listPhotos', folderId:currentManagedFolderId, eventType:currentManagedEventType, resolution:'compressed'}).then(res=>{
-    if(!res.success){ grid.innerHTML=''; return; }
+    if(!res.success){ grid.innerHTML = `<div class="center-msg">Could not load photos: ${res.error||'unknown error'}</div>`; return; }
     currentAdminPhotos = res.photos;
     selectedPhotoIds = new Set();
     renderAdminPhotoGrid();
+  }).catch(err=>{
+    grid.innerHTML = `<div class="center-msg">Network error loading photos: ${err.message}</div>`;
   });
 }
 
