@@ -373,7 +373,7 @@
       <h2 id="galClientName">—</h2>
       <div class="meta" id="galSub" style="font-size:11px; letter-spacing:2px; color:var(--ink-soft);">PRIVATE GALLERY</div>
     </div>
-    <button class="btn primary" id="galDownloadAllBtn" style="font-size:10px; padding:7px 12px;" onclick="downloadEntireGallery()">⬇️ Download All Folders</button>
+    <button class="btn primary" id="galDownloadAllBtn" style="font-size:10px; padding:7px 12px;" onclick="downloadEntireGallery()">⬇ Download All Folders</button>
   </div>
   <div id="galVideoContainer"></div>
   <div class="event-tabs" id="galEventTabs"></div>
@@ -384,7 +384,7 @@
       <button class="active" data-res="compressed">Compressed (web)</button>
       <button data-res="full">Full Resolution</button>
     </div>
-    <button class="btn primary" style="border:1px solid var(--gold); background:var(--gold); color:var(--navy);" onclick="downloadAllCurrentTab()">⬇️ Download This Folder</button>
+    <button class="btn primary" style="border:1px solid var(--gold); background:var(--gold); color:var(--navy);" onclick="downloadAllCurrentTab()">⬇ Download This Folder</button>
   </div>
 </div>
 
@@ -559,7 +559,7 @@ function buildHomeCatFilter(collections){
   const bar = document.getElementById('homeCatFilter');
   const cats = [...new Set(collections.filter(c=>c.isPublic).map(c=>c.category).filter(Boolean))];
   bar.innerHTML = '<button class="active" data-cat="all">All</button>' +
-    cats.map(cat => <button data-cat="${cat}">${cat}</button>).join('');
+    cats.map(cat => `<button data-cat="${cat}">${cat}</button>`).join('');
 }
 
 function renderHomeGrid(collections, filter){
@@ -569,7 +569,7 @@ function renderHomeGrid(collections, filter){
   if(filtered.length===0){ grid.innerHTML = '<div class="center-msg">No portfolio pieces published yet.</div>'; return; }
   grid.innerHTML = filtered.map(c => `
     <div class="collection-card" onclick="location.href='?gallery=${c.id}&view=portfolio'">
-      <div class="collection-cover" style="${c.coverFileId ? background-image:url('https://drive.google.com/thumbnail?id=${c.coverFileId}&sz=w1000') : ''}">
+      <div class="collection-cover" style="${c.coverFileId ? `background-image:url('https://drive.google.com/thumbnail?id=${c.coverFileId}&sz=w1000')` : ''}">
         <div class="collection-caption">
           <h3>${c.clientName}</h3>
           <p>${c.eventDate}</p>
@@ -620,7 +620,7 @@ function loadAdminCollections(){
       <div class="collection-list-row">
         <div style="display:flex; align-items:center; gap:14px;">
           <div style="width:52px; height:52px; border-radius:4px; overflow:hidden; flex-shrink:0; background:var(--line);">
-            ${c.coverFileId ? <img src="https://drive.google.com/thumbnail?id=${c.coverFileId}&sz=w200" style="width:100%; height:100%; object-fit:cover; display:block;"> : ''}
+            ${c.coverFileId ? `<img src="https://drive.google.com/thumbnail?id=${c.coverFileId}&sz=w200" style="width:100%; height:100%; object-fit:cover; display:block;">` : ''}
           </div>
           <div>
             <div class="name">${c.clientName} ${c.isPublic ? '<span style="font-size:10px; color:var(--gold); letter-spacing:1px;">● PORTFOLIO</span>' : ''}</div>
@@ -711,9 +711,9 @@ function renderEventPills(){
   const row = document.getElementById('eventPillRow');
   row.innerHTML = currentManagedEvents.map((ev,i) => `
     <div class="event-pill ${ev===currentManagedEventType?'active':''}">
-      ${i>0 ? <span onclick="moveEventPill(${i},-1)" style="opacity:.6; cursor:pointer; margin-right:6px;" title="Move left">◀️</span> : ''}
+      ${i>0 ? `<span onclick="moveEventPill(${i},-1)" style="opacity:.6; cursor:pointer; margin-right:6px;" title="Move left">◀</span>` : ''}
       <span onclick="selectManagedEvent('${ev.replace(/'/g,"\\'")}')">${ev}</span>
-      ${i<currentManagedEvents.length-1 ? <span onclick="moveEventPill(${i},1)" style="opacity:.6; cursor:pointer; margin-left:6px;" title="Move right">▶️</span> : ''}
+      ${i<currentManagedEvents.length-1 ? `<span onclick="moveEventPill(${i},1)" style="opacity:.6; cursor:pointer; margin-left:6px;" title="Move right">▶</span>` : ''}
       <span onclick="deleteEventType('${ev.replace(/'/g,"\\'")}')" style="margin-left:8px; opacity:.6; cursor:pointer;" title="Delete this event">✕</span>
     </div>
   `).join('');
@@ -731,7 +731,7 @@ function moveEventPill(index, direction){
 }
 
 function deleteEventType(ev){
-  if(!confirm(Delete "${ev}" and all its photos? This cannot be undone.)) return;
+  if(!confirm(`Delete "${ev}" and all its photos? This cannot be undone.`)) return;
   api({action:'deleteEvent', password:adminPassword, folderId:currentManagedFolderId, eventType:ev}).then(res=>{
     currentManagedEvents = currentManagedEvents.filter(e=>e!==ev);
     if(currentManagedEventType===ev) currentManagedEventType = currentManagedEvents[0] || null;
@@ -795,7 +795,7 @@ function moveSelectedToFolder(){
   const fileNames = currentAdminPhotos.filter(p=>selectedPhotoIds.has(p.id)).map(p=>p.name);
   api({action:'movePhotosToEvent', password:adminPassword, folderId:currentManagedFolderId, fromEventType:currentManagedEventType, toEventType:targetEvent, fileNames}).then(res=>{
     if(res.success){
-      alert(Moved ${fileNames.length} photo(s) to "${targetEvent}".);
+      alert(`Moved ${fileNames.length} photo(s) to "${targetEvent}".`);
       selectedPhotoIds = new Set();
       loadAdminPhotos();
     } else {
@@ -829,7 +829,7 @@ function renderAdminPhotoGrid(){
     bar.style.display = 'flex';
     document.getElementById('selectionCount').textContent = selectedPhotoIds.size + ' selected';
     const select = document.getElementById('moveToEventSelect');
-    select.innerHTML = currentManagedEvents.filter(ev=>ev!==currentManagedEventType).map(ev=><option value="${ev}">${ev}</option>).join('');
+    select.innerHTML = currentManagedEvents.filter(ev=>ev!==currentManagedEventType).map(ev=>`<option value="${ev}">${ev}</option>`).join('');
   } else {
     bar.style.display = 'none';
   }
@@ -950,7 +950,7 @@ function startUploadBatch(files){
   renderAdminPhotoGrid();
 
   const progress = document.getElementById('progressText');
-  progress.textContent = Uploading 0 of ${total}…;
+  progress.textContent = `Uploading 0 of ${total}…`;
 
   let nextIndex = 0;
   function launchNext(){
@@ -966,14 +966,14 @@ function startUploadBatch(files){
       tile.done = true;
       URL.revokeObjectURL(tile.localUrl);
       pendingUploadTiles = pendingUploadTiles.filter(t=>!t.done);
-      progress.textContent = Uploading ${completed} of ${total}…;
+      progress.textContent = `Uploading ${completed} of ${total}…`;
       renderAdminPhotoGrid();
 
       if(completed === total){
         if(uploadErrors.length===0){
           progress.textContent = 'Upload complete!';
         } else {
-          progress.textContent = Upload finished with ${uploadErrors.length} error(s): ${uploadErrors.join('; ')};
+          progress.textContent = `Upload finished with ${uploadErrors.length} error(s): ${uploadErrors.join('; ')}`;
         }
         loadAdminPhotos();
       } else {
@@ -1061,7 +1061,7 @@ function openClientGallery(folderId, isShowcaseView){
     document.getElementById('galClientName').textContent = res.clientName;
     if(res.coverFileId){
       document.getElementById('galleryCover').style.backgroundImage =
-        url('https://drive.google.com/thumbnail?id=${res.coverFileId}&sz=w1000');
+        `url('https://drive.google.com/thumbnail?id=${res.coverFileId}&sz=w1000')`;
     }
     currentGalleryFolderUrl = res.folderUrl;
     currentGalleryIsPublic = !!isShowcaseView;
@@ -1069,7 +1069,7 @@ function openClientGallery(folderId, isShowcaseView){
     document.getElementById('galDownloadBar').style.display = currentGalleryIsPublic ? 'none' : 'flex';
     const videoContainer = document.getElementById('galVideoContainer');
     videoContainer.innerHTML = res.videoFileId
-      ? <div style="padding:20px 6vw;"><iframe src="https://drive.google.com/file/d/${res.videoFileId}/preview" width="100%" height="480" style="border:none; border-radius:4px;" allow="autoplay"></iframe></div>
+      ? `<div style="padding:20px 6vw;"><iframe src="https://drive.google.com/file/d/${res.videoFileId}/preview" width="100%" height="480" style="border:none; border-radius:4px;" allow="autoplay"></iframe></div>`
       : '';
     currentGalleryEvents = res.events.map(e=>e.name);
     currentGalleryEventType = currentGalleryEvents[0] || null;
@@ -1141,7 +1141,7 @@ function renderPhotoGridDisplay(displayPhotos, downloadSourcePhotos){
     const dlUrl = downloadMap[p.name];
     const downloadIcon = currentGalleryIsPublic
       ? ''
-      : (dlUrl ? <a class="icon-btn" href="${dlUrl}" target="_blank" title="Download this photo">⬇️</a> : <span class="icon-btn" title="Expired">🔒</span>);
+      : (dlUrl ? `<a class="icon-btn" href="${dlUrl}" target="_blank" title="Download this photo">⬇</a>` : `<span class="icon-btn" title="Expired">🔒</span>`);
     return `
       <div class="photo-tile">
         <img src="${p.viewUrl}" loading="lazy" onclick="openLightbox('${p.viewUrl.replace(/'/g,"")}')">
