@@ -180,8 +180,11 @@
     .lightbox-overlay{padding:0;}
     .lightbox-img{border-radius:0;}
   }
-  .download-bar{position:sticky; bottom:0; background:var(--navy); color:var(--paper-2); padding:8px 6vw; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:10px;}
-  .download-bar .btn{font-size:10px; padding:6px 12px;}
+  .download-bar{position:sticky; bottom:0; background:var(--navy); color:var(--paper-2); padding:10px 6vw; display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:10px; font-size:10px; opacity:0; pointer-events:none; transition:opacity .35s ease;}
+  .download-bar.visible{opacity:1; pointer-events:auto;}
+  .download-bar .dl-note{font-size:9px; color:rgba(255,255,255,0.6); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .download-bar .dl-mini-btn{flex-shrink:0; font-size:9px; letter-spacing:.5px; padding:6px 12px; border-radius:4px; border:1px solid rgba(230,211,161,0.5); background:transparent; color:var(--gold-soft); cursor:pointer; white-space:nowrap;}
+  .download-bar .dl-mini-btn:hover{background:rgba(230,211,161,0.15);}
 
   @media (max-width:720px){
     .photo-grid{grid-template-columns:repeat(2,1fr); gap:6px; padding:10px 8px 80px;}
@@ -399,8 +402,8 @@
   <div class="event-tabs" id="galEventTabs"></div>
   <div class="photo-grid" id="galPhotoGrid"></div>
   <div class="download-bar" id="galDownloadBar">
-    <div>Web-resolution images (optimized for screens and sharing)</div>
-    <button class="btn primary" style="border:1px solid var(--gold); background:var(--gold); color:var(--navy);" onclick="downloadAllCurrentTab()">⬇ Download This Folder</button>
+    <div class="dl-note">Web-resolution images</div>
+    <button class="dl-mini-btn" onclick="downloadAllCurrentTab()">⬇ Download</button>
   </div>
 </div>
 
@@ -957,11 +960,15 @@ function startUploadBatch(files){
 
   // Show instant local thumbnails right away, before any network call finishes,
   // so it feels immediate like Google Photos, and uploads happen in parallel in the background.
-  pendingUploadTiles = files.map(file => ({
+  // allTiles is a stable, never-reassigned array so each file can always be found by its
+  // original index — pendingUploadTiles (used only for rendering) is a separate array that
+  // shrinks as photos finish, so it must never be used for index lookups.
+  const allTiles = files.map(file => ({
     file,
     localUrl: URL.createObjectURL(file),
     done:false
   }));
+  pendingUploadTiles = allTiles.slice();
   renderAdminPhotoGrid();
 
   const progress = document.getElementById('progressText');
@@ -972,7 +979,7 @@ function startUploadBatch(files){
     if(nextIndex >= files.length) return;
     const i = nextIndex++;
     const file = files[i];
-    const tile = pendingUploadTiles[i];
+    const tile = allTiles[i];
 
     uploadSingleFile(file).catch(err=>{
       uploadErrors.push(file.name + ': ' + err.message);
@@ -1071,6 +1078,24 @@ uploadBox.addEventListener('drop', e=>{
 /* ================= CLIENT GALLERY (public link) ================= */
 let currentGalleryIsPublic = false;
 
+let downloadBarObserver = null;
+
+function setupDownloadBarReveal(){
+  const target = document.getElementById('galScrollTarget');
+  const bar = document.getElementById('galDownloadBar');
+  if(!target || !bar) return;
+
+  if(downloadBarObserver) downloadBarObserver.disconnect();
+  bar.classList.remove('visible');
+
+  downloadBarObserver = new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      bar.classList.toggle('visible', entry.isIntersecting || entry.boundingClientRect.top < 0);
+    });
+  }, { threshold: 0 });
+  downloadBarObserver.observe(target);
+}
+
 function openClientGallery(folderId, isShowcaseView){
   currentGalleryFolderId = folderId;
   showPage('clientGalleryPage');
@@ -1088,6 +1113,7 @@ function openClientGallery(folderId, isShowcaseView){
     currentGalleryIsPublic = !!isShowcaseView;
     document.getElementById('galDownloadAllBtn').style.display = currentGalleryIsPublic ? 'none' : 'inline-flex';
     document.getElementById('galDownloadBar').style.display = currentGalleryIsPublic ? 'none' : 'flex';
+    setupDownloadBarReveal();
     const videoContainer = document.getElementById('galVideoContainer');
     videoContainer.innerHTML = res.videoFileId
       ? `<div style="padding:20px 6vw;"><iframe src="https://drive.google.com/file/d/${res.videoFileId}/preview" width="100%" height="480" style="border:none; border-radius:4px;" allow="autoplay"></iframe></div>`
