@@ -844,16 +844,17 @@ function renderAdminPhotoGrid(){
     <div class="admin-photo-tile ${selectedPhotoIds.has(p.id)?'selected':''}"
          draggable="true"
          data-index="${i}"
+         onclick="openLightbox('${p.viewUrl.replace(/'/g,"")}')"
          ondragstart="onDragStart(event, ${i})"
          ondragover="onDragOver(event, ${i})"
          ondragleave="onDragLeave(event)"
          ondrop="onDrop(event, ${i})"
          ondragend="onDragEnd(event)">
       <div class="select-checkbox" onclick="toggleSelect('${p.id}', event)">${selectedPhotoIds.has(p.id)?'✓':''}</div>
-      <img src="${p.viewUrl}" loading="lazy" onclick="openLightbox('${p.viewUrl.replace(/'/g,"")}')">
+      <img src="${p.viewUrl}" loading="lazy">
       <div class="tile-actions">
-        <div class="mini-icon" title="Set as cover" onclick="setCover('${p.id}')">★</div>
-        <div class="mini-icon" title="Delete" onclick="deletePhoto('${p.id}')">✕</div>
+        <div class="mini-icon" title="Set as cover" onclick="event.stopPropagation(); setCover('${p.id}')">★</div>
+        <div class="mini-icon" title="Delete" onclick="event.stopPropagation(); deletePhoto('${p.id}')">✕</div>
       </div>
     </div>`).join('');
 }
