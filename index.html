@@ -130,6 +130,11 @@
   .admin-photo-tile:hover .tile-actions{background:rgba(10,27,51,0.45); opacity:1;}
   .admin-photo-tile.selected{outline:3px solid var(--gold); outline-offset:-3px;}
   .admin-photo-tile.drag-over{outline:3px dashed var(--navy); outline-offset:-3px;}
+  .admin-photo-tile.pending{cursor:default;}
+  .admin-photo-tile.pending img{opacity:.45;}
+  .pending-overlay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,27,51,0.25);}
+  .pending-spinner{width:26px; height:26px; border:3px solid rgba(255,255,255,0.5); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
   .select-checkbox{position:absolute; top:6px; left:6px; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.85); border:2px solid var(--navy); z-index:5; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--navy);}
   .selection-bar{display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:12px; color:var(--ink-soft);}
   .mini-icon{width:28px; height:28px; border-radius:50%; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer;}
@@ -153,6 +158,13 @@
   .photo-tile .hover-actions{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(10,27,51,0); opacity:0; transition:all .25s;}
   .photo-tile:hover .hover-actions{background:rgba(10,27,51,0.35); opacity:1;}
   .icon-btn{width:34px; height:34px; border-radius:50%; background:rgba(247,243,234,0.92); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--navy); cursor:pointer;}
+  .lightbox-overlay{position:fixed; inset:0; background:rgba(10,27,51,0.97); z-index:200; align-items:center; justify-content:center; padding:30px; cursor:zoom-out;}
+  .lightbox-img{max-width:100%; max-height:100%; object-fit:contain; border-radius:2px; cursor:default;}
+  .lightbox-close{position:absolute; top:16px; right:20px; color:#fff; font-size:28px; cursor:pointer; width:40px; height:40px; display:flex; align-items:center; justify-content:center;}
+  @media (max-width:600px){
+    .lightbox-overlay{padding:0;}
+    .lightbox-img{border-radius:0;}
+  }
   .download-bar{position:sticky; bottom:0; background:var(--navy); color:var(--paper-2); padding:8px 6vw; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:10px;}
   .res-toggle{display:flex; gap:6px;}
   .res-toggle button{font-size:9px; letter-spacing:.5px; padding:5px 10px; border-radius:16px; border:1px solid rgba(230,211,161,0.4); background:transparent; color:var(--gold-soft); cursor:pointer;}
@@ -177,6 +189,12 @@
     <span onclick="openQuoteModal()" style="color:var(--gold); font-weight:600;">Get Quote</span>
     <span onclick="goAdmin()">Studio Login</span>
   </div>
+</div>
+
+<!-- ============ FULLSCREEN PHOTO VIEWER (works from any page) ============ -->
+<div id="lightboxOverlay" class="lightbox-overlay" onclick="closeLightbox()" style="display:none;">
+  <img id="lightboxImg" class="lightbox-img" src="" onclick="event.stopPropagation()">
+  <div class="lightbox-close" onclick="closeLightbox()">✕</div>
 </div>
 
 <!-- ============ CONFIG BANNER (shows until you set WEBAPP_URL) ============ -->
@@ -343,10 +361,6 @@
 
 <!-- ============ CLIENT GALLERY (public, shared link) ============ -->
 <div class="page" id="clientGalleryPage">
-  <div id="lightboxOverlay" onclick="closeLightbox()" style="display:none; position:fixed; inset:0; background:rgba(10,27,51,0.95); z-index:200; align-items:center; justify-content:center; padding:30px; cursor:zoom-out;">
-    <img id="lightboxImg" src="" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:2px;">
-    <div style="position:absolute; top:20px; right:30px; color:white; font-size:28px; cursor:pointer;" onclick="closeLightbox()">✕</div>
-  </div>
   <div class="g-cover" id="galleryCover">
     <div class="g-cover-content">
       <div class="eyebrow" id="galEyebrow">COLLECTION</div>
@@ -424,9 +438,7 @@ const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwcMZyt7BR45r-3Afm2R
 // Direct link to the live site (GitHub Pages) — used for client-facing links so they open
 // as a normal webpage on any phone/app, instead of routing through script.google.com.
 const SITE_URL = "https://shutterstories.github.io/Client-Gallery/";
-const ENQUIRY_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwcMZyt7BR45r-3Afm2RX66U0LswESWDyLYT2k3zq2G0zIEVeN72ukn2GQnMhHJJ8zdhA/exec";
-
-
+const ENQUIRY_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxI7Rq9_5SG8PnzLeQDQaKK51aD31FcjNUUNM38KSGZ7kwC9j3Gsf3qabK7RKg3hwx5-w/exec";
 /* =========================================== */
 
 function openQuoteModal(){
@@ -822,7 +834,13 @@ function renderAdminPhotoGrid(){
     bar.style.display = 'none';
   }
 
-  grid.innerHTML = currentAdminPhotos.map((p,i) => `
+  const pendingHtml = pendingUploadTiles.map(t => `
+    <div class="admin-photo-tile pending">
+      <img src="${t.localUrl}">
+      <div class="pending-overlay"><div class="pending-spinner"></div></div>
+    </div>`).join('');
+
+  grid.innerHTML = pendingHtml + currentAdminPhotos.map((p,i) => `
     <div class="admin-photo-tile ${selectedPhotoIds.has(p.id)?'selected':''}"
          draggable="true"
          data-index="${i}"
@@ -832,7 +850,7 @@ function renderAdminPhotoGrid(){
          ondrop="onDrop(event, ${i})"
          ondragend="onDragEnd(event)">
       <div class="select-checkbox" onclick="toggleSelect('${p.id}', event)">${selectedPhotoIds.has(p.id)?'✓':''}</div>
-      <img src="${p.viewUrl}" loading="lazy">
+      <img src="${p.viewUrl}" loading="lazy" onclick="openLightbox('${p.viewUrl.replace(/'/g,"")}')">
       <div class="tile-actions">
         <div class="mini-icon" title="Set as cover" onclick="setCover('${p.id}')">★</div>
         <div class="mini-icon" title="Delete" onclick="deletePhoto('${p.id}')">✕</div>
@@ -903,6 +921,8 @@ function deletePhoto(fileId){
 }
 
 let uploadErrors = [];
+let pendingUploadTiles = [];
+const UPLOAD_CONCURRENCY = 4; // how many photos upload at the same time (like Google Photos)
 
 function handleFiles(fileList){
   if(!currentManagedEventType){
@@ -911,25 +931,62 @@ function handleFiles(fileList){
   }
   const files = Array.from(fileList);
   if(files.length===0) return;
-  uploadErrors = [];
-  uploadQueue(files, 0);
+  startUploadBatch(files);
 }
 
-function uploadQueue(files, index){
-  const progress = document.getElementById('progressText');
-  if(index >= files.length){
-    if(uploadErrors.length===0){
-      progress.textContent = 'Upload complete!';
-    } else {
-      progress.textContent = `Upload finished with ${uploadErrors.length} error(s): ${uploadErrors.join('; ')}`;
-    }
-    loadAdminPhotos();
-    return;
-  }
-  progress.textContent = `Uploading ${index+1} of ${files.length}…`;
-  const file = files[index];
+function startUploadBatch(files){
+  uploadErrors = [];
+  const total = files.length;
+  let completed = 0;
 
-  Promise.all([
+  // Show instant local thumbnails right away, before any network call finishes,
+  // so it feels immediate like Google Photos, and uploads happen in parallel in the background.
+  pendingUploadTiles = files.map(file => ({
+    file,
+    localUrl: URL.createObjectURL(file),
+    done:false
+  }));
+  renderAdminPhotoGrid();
+
+  const progress = document.getElementById('progressText');
+  progress.textContent = `Uploading 0 of ${total}…`;
+
+  let nextIndex = 0;
+  function launchNext(){
+    if(nextIndex >= files.length) return;
+    const i = nextIndex++;
+    const file = files[i];
+    const tile = pendingUploadTiles[i];
+
+    uploadSingleFile(file).catch(err=>{
+      uploadErrors.push(file.name + ': ' + err.message);
+    }).then(()=>{
+      completed++;
+      tile.done = true;
+      URL.revokeObjectURL(tile.localUrl);
+      pendingUploadTiles = pendingUploadTiles.filter(t=>!t.done);
+      progress.textContent = `Uploading ${completed} of ${total}…`;
+      renderAdminPhotoGrid();
+
+      if(completed === total){
+        if(uploadErrors.length===0){
+          progress.textContent = 'Upload complete!';
+        } else {
+          progress.textContent = `Upload finished with ${uploadErrors.length} error(s): ${uploadErrors.join('; ')}`;
+        }
+        loadAdminPhotos();
+      } else {
+        launchNext();
+      }
+    });
+  }
+
+  const startCount = Math.min(UPLOAD_CONCURRENCY, files.length);
+  for(let c=0; c<startCount; c++) launchNext();
+}
+
+function uploadSingleFile(file){
+  return Promise.all([
     fileToBase64(file),
     compressImage(file, 1600, 0.75)
   ]).then(([fullB64, compressed]) => {
@@ -943,17 +1000,10 @@ function uploadQueue(files, index){
       eventType:currentManagedEventType, resolution:'compressed',
       fileName:file.name, mimeType:'image/jpeg', base64Data:compressed
     });
-    Promise.all([uploadFull, uploadCompressed]).then(([r1, r2])=>{
-      if(!r1.success) uploadErrors.push(file.name + ' (full: ' + (r1.error||'failed') + ')');
-      if(!r2.success) uploadErrors.push(file.name + ' (compressed: ' + (r2.error||'failed') + ')');
-      uploadQueue(files, index+1);
-    }).catch(err=>{
-      uploadErrors.push(file.name + ' (network error: ' + err.message + ')');
-      uploadQueue(files, index+1);
+    return Promise.all([uploadFull, uploadCompressed]).then(([r1, r2])=>{
+      if(!r1.success) throw new Error('full upload failed: ' + (r1.error||'unknown'));
+      if(!r2.success) throw new Error('compressed upload failed: ' + (r2.error||'unknown'));
     });
-  }).catch(err=>{
-    uploadErrors.push(file.name + ' (read error: ' + err.message + ')');
-    uploadQueue(files, index+1);
   });
 }
 
