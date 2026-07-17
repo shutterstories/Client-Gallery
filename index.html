@@ -980,13 +980,21 @@ function startUploadBatch(files){
 
 function uploadSingleFile(file){
   return compressImage(file, 2048, 0.9).then(webB64 => {
-    return api({
+    const uploadCall = api({
       action:'uploadPhoto', password:adminPassword, folderId:currentManagedFolderId,
       eventType:currentManagedEventType, resolution:'compressed',
       fileName:file.name, mimeType:'image/jpeg', base64Data:webB64
     }).then(res=>{
       if(!res.success) throw new Error('upload failed: ' + (res.error||'unknown'));
     });
+
+    // Safety net: if the server never responds (network stall, backend hang),
+    // give up after 45s instead of blocking the rest of the batch forever.
+    const uploadTimeout = new Promise((_, reject)=>{
+      setTimeout(()=> reject(new Error('Upload timed out after 45s — server did not respond, skipped')), 45000);
+    });
+
+    return Promise.race([uploadCall, uploadTimeout]);
   });
 }
 
