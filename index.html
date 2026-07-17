@@ -126,8 +126,8 @@
   .admin-photo-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px;}
   .admin-photo-tile{position:relative; aspect-ratio:1/1; background:var(--line); border-radius:3px; overflow:hidden; cursor:grab;}
   .admin-photo-tile img{width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;}
-  .admin-photo-tile .tile-actions{position:absolute; inset:0; background:rgba(10,27,51,0); opacity:0; transition:.2s; display:flex; align-items:center; justify-content:center; gap:6px;}
-  .admin-photo-tile:hover .tile-actions{background:rgba(10,27,51,0.45); opacity:1;}
+  .admin-photo-tile .tile-actions{position:absolute; inset:0; background:rgba(10,27,51,0); opacity:0; transition:.2s; display:flex; align-items:center; justify-content:center; gap:6px; pointer-events:none;}
+  .admin-photo-tile:hover .tile-actions{background:rgba(10,27,51,0.45); opacity:1; pointer-events:auto;}
   .admin-photo-tile.selected{outline:3px solid var(--gold); outline-offset:-3px;}
   .admin-photo-tile.drag-over{outline:3px dashed var(--navy); outline-offset:-3px;}
   .admin-photo-tile.pending{cursor:default;}
@@ -155,8 +155,8 @@
   .photo-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:6px 6vw 100px;}
   .photo-tile{position:relative; aspect-ratio:4/5; overflow:hidden; background:linear-gradient(150deg,#eadfc4,#c9a877);}
   .photo-tile img{width:100%; height:100%; object-fit:cover; display:block;}
-  .photo-tile .hover-actions{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(10,27,51,0); opacity:0; transition:all .25s;}
-  .photo-tile:hover .hover-actions{background:rgba(10,27,51,0.35); opacity:1;}
+  .photo-tile .hover-actions{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(10,27,51,0); opacity:0; transition:all .25s; pointer-events:none;}
+  .photo-tile:hover .hover-actions{background:rgba(10,27,51,0.35); opacity:1; pointer-events:auto;}
   .icon-btn{width:34px; height:34px; border-radius:50%; background:rgba(247,243,234,0.92); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--navy); cursor:pointer;}
   .lightbox-overlay{position:fixed; inset:0; background:rgba(10,27,51,0.97); z-index:200; align-items:center; justify-content:center; padding:30px; cursor:zoom-out;}
   .lightbox-img{max-width:100%; max-height:100%; object-fit:contain; border-radius:2px; cursor:default;}
@@ -987,13 +987,13 @@ function startUploadBatch(files){
 
 function uploadSingleFile(file){
   return Promise.all([
-    fileToBase64(file),
-    compressImage(file, 1600, 0.75)
+    compressImage(file, 3500, 0.92), // "full" copy: still very high quality, but no longer the raw 20-40MB original
+    compressImage(file, 1600, 0.75)  // "compressed" copy: for fast on-screen viewing
   ]).then(([fullB64, compressed]) => {
     const uploadFull = api({
       action:'uploadPhoto', password:adminPassword, folderId:currentManagedFolderId,
       eventType:currentManagedEventType, resolution:'full',
-      fileName:file.name, mimeType:file.type, base64Data:fullB64
+      fileName:file.name, mimeType:'image/jpeg', base64Data:fullB64
     });
     const uploadCompressed = api({
       action:'uploadPhoto', password:adminPassword, folderId:currentManagedFolderId,
