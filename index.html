@@ -159,10 +159,12 @@
   .event-tabs button.active{color:var(--navy); border-color:var(--gold); font-weight:600;}
   .photo-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px; padding:20px 6vw 100px;}
   .photo-tile{position:relative; aspect-ratio:2/3; overflow:hidden; background:linear-gradient(150deg,#eadfc4,#c9a877); border-radius:8px; box-shadow:0 4px 18px rgba(10,27,51,0.10); cursor:pointer;}
+  .photo-tile.wide{grid-column:span 2; aspect-ratio:3/2;}
   .photo-tile img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .4s ease;}
   .photo-tile:hover img{transform:scale(1.03);}
-  .photo-tile .hover-actions{position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:flex-end; padding:12px; gap:10px; background:linear-gradient(180deg, transparent 60%, rgba(10,27,51,0.45) 100%); opacity:0; transition:all .25s; pointer-events:none;}
-  .photo-tile:hover .hover-actions{opacity:1; pointer-events:auto;}
+  .photo-tile .hover-actions{position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:flex-end; padding:12px; gap:10px; background:linear-gradient(180deg, transparent 60%, rgba(10,27,51,0.45) 100%); opacity:0; transition:opacity .25s; pointer-events:none;}
+  .photo-tile:hover .hover-actions{opacity:1;}
+  .photo-tile .hover-actions .icon-btn{pointer-events:auto;}
   .icon-btn{width:34px; height:34px; border-radius:50%; background:rgba(247,243,234,0.92); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--navy); cursor:pointer;}
   .lightbox-overlay{position:fixed; inset:0; background:rgba(10,27,51,0.97); z-index:200; align-items:center; justify-content:center; padding:30px; cursor:zoom-out;}
   .lightbox-img{max-width:100%; max-height:100%; object-fit:contain; border-radius:2px; cursor:default;}
@@ -1197,7 +1199,8 @@ function renderPhotoGridDisplay(photos){
       : `<a class="icon-btn" href="${p.downloadUrl}" target="_blank" title="Download this photo (web resolution)" onclick="event.stopPropagation()">⬇</a>`;
     return `
       <div class="photo-tile">
-        <img src="${p.viewUrl}" loading="lazy" onclick="openLightbox(${i})">
+        <img src="${p.viewUrl}" loading="lazy" onclick="openLightbox(${i})"
+             onload="if(this.naturalWidth > this.naturalHeight){ this.closest('.photo-tile').classList.add('wide'); }">
         <div class="hover-actions">
           ${downloadIcon}
         </div>
