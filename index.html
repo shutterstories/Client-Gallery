@@ -682,12 +682,7 @@ function openManager(folderId, clientName, eventDate){
   currentManagedFolderId = folderId;
   document.getElementById('collectionManager').style.display='block';
   document.getElementById('cmTitle').textContent = 'Manage: ' + clientName;
-  // Use the Apps Script URL (not the static GitHub Pages URL) so link previews
-  // on WhatsApp/iMessage/etc. show this specific client's cover photo and name —
-  // the static site can't do this since WhatsApp doesn't run its JavaScript.
-  // Visitors who tap the link still land on the normal clean gallery page;
-  // doGet() on the backend redirects them there automatically and instantly.
-  const link = WEBAPP_URL + '?gallery=' + folderId;
+  const link = SITE_URL + '?gallery=' + folderId;
   document.getElementById('cmLink').textContent = link;
   document.getElementById('collectionManager').dataset.link = link;
 
