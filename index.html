@@ -166,9 +166,6 @@
     .lightbox-img{border-radius:0;}
   }
   .download-bar{position:sticky; bottom:0; background:var(--navy); color:var(--paper-2); padding:8px 6vw; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:10px;}
-  .res-toggle{display:flex; gap:6px;}
-  .res-toggle button{font-size:9px; letter-spacing:.5px; padding:5px 10px; border-radius:16px; border:1px solid rgba(230,211,161,0.4); background:transparent; color:var(--gold-soft); cursor:pointer;}
-  .res-toggle button.active{background:var(--gold); color:var(--navy); border-color:var(--gold);}
   .download-bar .btn{font-size:10px; padding:6px 12px;}
 
   @media (max-width:720px){
@@ -379,11 +376,7 @@
   <div class="event-tabs" id="galEventTabs"></div>
   <div class="photo-grid" id="galPhotoGrid"></div>
   <div class="download-bar" id="galDownloadBar">
-    <div>Resolution:</div>
-    <div class="res-toggle" id="galResToggle">
-      <button class="active" data-res="compressed">Compressed (web)</button>
-      <button data-res="full">Full Resolution</button>
-    </div>
+    <div>Web-resolution images (optimized for screens and sharing)</div>
     <button class="btn primary" style="border:1px solid var(--gold); background:var(--gold); color:var(--navy);" onclick="downloadAllCurrentTab()">⬇ Download This Folder</button>
   </div>
 </div>
@@ -505,7 +498,6 @@ let currentManagedEventType = null;
 let currentGalleryFolderId = null;
 let currentGalleryEvents = [];
 let currentGalleryEventType = null;
-let currentGalleryRes = 'compressed';
 let currentGalleryFolderUrl = null;
 
 function api(payload){
@@ -987,25 +979,13 @@ function startUploadBatch(files){
 }
 
 function uploadSingleFile(file){
-  return Promise.all([
-    compressImage(file, 3500, 0.92), // "full" copy: still very high quality, but no longer the raw 20-40MB original
-    compressImage(file, 1600, 0.75)  // "compressed" copy: for fast on-screen viewing
-  ]).then(([fullB64, compressed]) => {
-    // Send one request at a time per photo (instead of both at once) — this is gentler
-    // on the Apps Script backend, which otherwise queues/locks concurrent writes.
+  return compressImage(file, 2048, 0.9).then(webB64 => {
     return api({
       action:'uploadPhoto', password:adminPassword, folderId:currentManagedFolderId,
-      eventType:currentManagedEventType, resolution:'full',
-      fileName:file.name, mimeType:'image/jpeg', base64Data:fullB64
-    }).then(r1=>{
-      if(!r1.success) throw new Error('full upload failed: ' + (r1.error||'unknown'));
-      return api({
-        action:'uploadPhoto', password:adminPassword, folderId:currentManagedFolderId,
-        eventType:currentManagedEventType, resolution:'compressed',
-        fileName:file.name, mimeType:'image/jpeg', base64Data:compressed
-      });
-    }).then(r2=>{
-      if(!r2.success) throw new Error('compressed upload failed: ' + (r2.error||'unknown'));
+      eventType:currentManagedEventType, resolution:'compressed',
+      fileName:file.name, mimeType:'image/jpeg', base64Data:webB64
+    }).then(res=>{
+      if(!res.success) throw new Error('upload failed: ' + (res.error||'unknown'));
     });
   });
 }
@@ -1020,11 +1000,11 @@ function fileToBase64(file){
 }
 
 function compressImage(file, maxDim, quality){
-  return new Promise((resolve,reject)=>{
+  const decode = new Promise((resolve,reject)=>{
     const img = new Image();
     const reader = new FileReader();
     reader.onload = e => { img.src = e.target.result; };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error('Could not read file (possibly corrupted)'));
     img.onload = () => {
       let { width, height } = img;
       if(width > height && width > maxDim){ height *= maxDim/width; width = maxDim; }
@@ -1034,8 +1014,18 @@ function compressImage(file, maxDim, quality){
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
       resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]);
     };
+    img.onerror = () => reject(new Error('Could not decode image (file may be corrupted or an unsupported format like HEIC)'));
     reader.readAsDataURL(file);
   });
+
+  // Safety net: if a photo neither loads nor errors within 25s (some corrupted
+  // files trigger neither event and would otherwise hang the queue forever),
+  // give up on it so the rest of the batch can continue.
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Timed out decoding this photo after 25s (likely a corrupted file) — skipped')), 25000);
+  });
+
+  return Promise.race([decode, timeout]);
 }
 
 /* drag and drop */
@@ -1091,14 +1081,6 @@ function selectGalleryEvent(ev){
   loadGalleryPhotos();
 }
 
-document.getElementById('galResToggle').addEventListener('click', e=>{
-  if(e.target.tagName!=='BUTTON') return;
-  document.querySelectorAll('#galResToggle button').forEach(b=>b.classList.remove('active'));
-  e.target.classList.add('active');
-  currentGalleryRes = e.target.dataset.res;
-  loadGalleryPhotos();
-});
-
 function openLightbox(imgUrl){
   const largerUrl = imgUrl.replace(/sz=w\d+/, 'sz=w1600');
   document.getElementById('lightboxImg').src = largerUrl;
@@ -1114,34 +1096,19 @@ function loadGalleryPhotos(){
   grid.innerHTML = '<div class="center-msg">Loading photos…</div>';
   if(!currentGalleryEventType){ grid.innerHTML = '<div class="center-msg">No photos yet.</div>'; return; }
 
-  api({action:'listPhotos', folderId:currentGalleryFolderId, eventType:currentGalleryEventType, resolution:'compressed'}).then(compressedRes=>{
-    if(!compressedRes.success || compressedRes.photos.length===0){ grid.innerHTML = '<div class="center-msg">No photos yet.</div>'; return; }
-
-    if(currentGalleryRes === 'full'){
-      api({action:'listPhotos', folderId:currentGalleryFolderId, eventType:currentGalleryEventType, resolution:'full'}).then(fullRes=>{
-        if(fullRes.expired){
-          grid.innerHTML = '<div class="center-msg">Full-resolution downloads for this event have expired (available for 30 days after upload). Compressed photos are still viewable above.</div>';
-          renderPhotoGridDisplay(compressedRes.photos, compressedRes.photos);
-          return;
-        }
-        renderPhotoGridDisplay(compressedRes.photos, fullRes.photos);
-      });
-    } else {
-      renderPhotoGridDisplay(compressedRes.photos, compressedRes.photos);
-    }
+  api({action:'listPhotos', folderId:currentGalleryFolderId, eventType:currentGalleryEventType, resolution:'compressed'}).then(res=>{
+    if(!res.success || res.photos.length===0){ grid.innerHTML = '<div class="center-msg">No photos yet.</div>'; return; }
+    renderPhotoGridDisplay(res.photos);
   });
 }
 
-function renderPhotoGridDisplay(displayPhotos, downloadSourcePhotos){
+function renderPhotoGridDisplay(photos){
   const grid = document.getElementById('galPhotoGrid');
-  const downloadMap = {};
-  downloadSourcePhotos.forEach(p => downloadMap[p.name] = p.downloadUrl);
 
-  grid.innerHTML = displayPhotos.map(p => {
-    const dlUrl = downloadMap[p.name];
+  grid.innerHTML = photos.map(p => {
     const downloadIcon = currentGalleryIsPublic
       ? ''
-      : (dlUrl ? `<a class="icon-btn" href="${dlUrl}" target="_blank" title="Download this photo">⬇</a>` : `<span class="icon-btn" title="Expired">🔒</span>`);
+      : `<a class="icon-btn" href="${p.downloadUrl}" target="_blank" title="Download this photo (web resolution)">⬇</a>`;
     return `
       <div class="photo-tile">
         <img src="${p.viewUrl}" loading="lazy" onclick="openLightbox('${p.viewUrl.replace(/'/g,"")}')">
@@ -1154,15 +1121,15 @@ function renderPhotoGridDisplay(displayPhotos, downloadSourcePhotos){
 
 function downloadEntireGallery(){
   if(!currentGalleryFolderUrl) return;
-  alert('Opening your complete gallery folder in Google Drive — select all and download as a zip from there.');
+  alert('Opening your complete gallery folder in Google Drive (web-resolution images) — select all and download as a zip from there.');
   window.open(currentGalleryFolderUrl, '_blank');
 }
 
 function downloadAllCurrentTab(){
   if(!currentGalleryEventType) return;
-  api({action:'listPhotos', folderId:currentGalleryFolderId, eventType:currentGalleryEventType, resolution:currentGalleryRes}).then(res=>{
+  api({action:'listPhotos', folderId:currentGalleryFolderId, eventType:currentGalleryEventType, resolution:'compressed'}).then(res=>{
     if(res.success && res.folderUrl){
-      alert('Opening your photos in Google Drive — click the download icon there to save all at once as a zip.');
+      alert('Opening your web-resolution photos in Google Drive — click the download icon there to save all at once as a zip.');
       window.open(res.folderUrl, '_blank');
     }
   });
