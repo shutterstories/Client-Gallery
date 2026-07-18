@@ -439,7 +439,7 @@
 <!-- ============ FULLSCREEN VIDEO VIEWER (opens only when the video tab is tapped) ============ -->
 <div id="videoLightboxOverlay" style="display:none; position:fixed; inset:0; background:#000; z-index:250; align-items:center; justify-content:center;">
   <div class="lightbox-close" style="z-index:2;" onclick="closeVideoLightbox()">✕</div>
-  <iframe id="videoLightboxFrame" src="" width="100%" height="100%" style="border:none;" allow="autoplay; fullscreen"></iframe>
+  <iframe id="videoLightboxFrame" src="" width="100%" height="100%" style="border:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
 </div>
 
 <!-- ============ GET QUOTE MODAL ============ -->
@@ -1238,14 +1238,40 @@ let currentGalleryVideoFileId = null;
 
 function openVideoLightbox(){
   if(!currentGalleryVideoFileId) return;
-  document.getElementById('videoLightboxFrame').src = `https://drive.google.com/file/d/${currentGalleryVideoFileId}/preview`;
-  document.getElementById('videoLightboxOverlay').style.display = 'flex';
+  const overlay = document.getElementById('videoLightboxOverlay');
+  const frame = document.getElementById('videoLightboxFrame');
+  frame.src = `https://drive.google.com/file/d/${currentGalleryVideoFileId}/preview`;
+  overlay.style.display = 'flex';
+
+  // Use the browser's real fullscreen mode (not just CSS sizing) so rotation
+  // and scaling behave like a native video player instead of leaving black bars.
+  const requestFs = overlay.requestFullscreen || overlay.webkitRequestFullscreen || overlay.webkitEnterFullscreen;
+  if(requestFs){
+    try { requestFs.call(overlay); } catch(e){ /* fullscreen not available — overlay still works, just without OS-level rotation handling */ }
+  }
 }
 
 function closeVideoLightbox(){
+  const exitFs = document.exitFullscreen || document.webkitExitFullscreen;
+  if((document.fullscreenElement || document.webkitFullscreenElement) && exitFs){
+    try { exitFs.call(document); } catch(e){}
+  }
   document.getElementById('videoLightboxOverlay').style.display = 'none';
   document.getElementById('videoLightboxFrame').src = ''; // stop playback when closed
 }
+
+// If the person exits fullscreen using their phone's own back gesture/button
+// (rather than our ✕), close the overlay too instead of leaving a black screen.
+['fullscreenchange','webkitfullscreenchange'].forEach(evt=>{
+  document.addEventListener(evt, ()=>{
+    const stillFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+    const overlay = document.getElementById('videoLightboxOverlay');
+    if(!stillFullscreen && overlay.style.display === 'flex'){
+      overlay.style.display = 'none';
+      document.getElementById('videoLightboxFrame').src = '';
+    }
+  });
+});
 
 function renderGalleryTabs(){
   const tabs = document.getElementById('galEventTabs');
