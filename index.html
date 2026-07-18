@@ -823,18 +823,20 @@ function openManager(folderId, clientName, eventDate){
 
 let currentManagedPublicVideos = new Set();
 let currentManagedVideoLabels = {};
+let currentManagedAllVideos = [];
 
 function renderVideoList(videos){
   const wrap = document.getElementById('videoListWrap');
   const status = document.getElementById('videoStatus');
   currentManagedVideoLabels = {};
+  currentManagedAllVideos = videos;
   videos.forEach(v => currentManagedVideoLabels[v.id] = v.label || 'Video');
   status.textContent = videos.length > 0
     ? `${videos.length} video${videos.length>1?'s':''} added`
     : 'No videos added yet.';
-  wrap.innerHTML = videos.map(v => `
+  wrap.innerHTML = videos.map((v,i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--paper-2); border:1px solid var(--line); border-radius:3px; margin-bottom:6px; font-size:12px;">
-      <span>${v.label || 'Video'}</span>
+      <span>${i+1}. ${v.label || 'Video'}</span>
       <span style="display:flex; align-items:center; gap:10px;">
         <span onclick="toggleVideoPortfolio('${v.id}', '${(v.label||'Video').replace(/'/g,"\\'")}')" style="cursor:pointer; color:${currentManagedPublicVideos.has(v.id)?'var(--gold)':'inherit'};" title="${currentManagedPublicVideos.has(v.id) ? 'Shown on portfolio under its own tab \u2014 tap to hide' : 'Show this video on portfolio under its own tab'}">${currentManagedPublicVideos.has(v.id) ? '●' : '○'}</span>
         <span onclick="deleteVideo('${v.id}')" style="cursor:pointer; color:#B23B3B;" title="Remove this video">✕</span>
@@ -1199,11 +1201,19 @@ function assignPhotoAsVideoCover(fileId){
   if(publicVideoIds.length === 1){
     targetVideoId = publicVideoIds[0];
   } else {
-    const options = publicVideoIds.map(id => currentManagedVideoLabels[id] || 'Video').join('", "');
-    const typed = prompt(`Which video should use this photo as its cover? Type its exact title:\n"${options}"`);
+    // Numbers match the same order shown in the video list above (not just
+    // among public videos) — works even when two videos share the exact
+    // same title, and stays consistent with what the studio sees on screen.
+    const optionsList = currentManagedAllVideos
+      .map((v,i) => publicVideoIds.includes(v.id) ? `${i+1}. ${v.label || 'Video'}` : null)
+      .filter(Boolean).join('\n');
+    const typed = prompt(`Which video should use this photo as its cover? Type the number (matching the list above):\n${optionsList}`);
     if(!typed) return;
-    targetVideoId = publicVideoIds.find(id => (currentManagedVideoLabels[id]||'').toLowerCase() === typed.trim().toLowerCase());
-    if(!targetVideoId){ alert('No published video matches that title exactly — please try again.'); return; }
+    const index = parseInt(typed.trim(), 10) - 1;
+    if(isNaN(index) || index < 0 || index >= currentManagedAllVideos.length || !publicVideoIds.includes(currentManagedAllVideos[index].id)){
+      alert('Please enter a valid number from the list.'); return;
+    }
+    targetVideoId = currentManagedAllVideos[index].id;
   }
 
   api({action:'setVideoCover', password:adminPassword, folderId:currentManagedFolderId, videoFileId:targetVideoId, fileId}).then(res=>{
@@ -1581,6 +1591,14 @@ document.addEventListener('keydown', e=>{
 
 function loadGalleryPhotos(){
   const grid = document.getElementById('galPhotoGrid');
+
+  if(currentGalleryEvents.length === 0){
+    grid.innerHTML = currentGalleryVideos.length > 0
+      ? '<div class="center-msg">↑ Tap "Video" above to watch.</div>'
+      : '<div class="center-msg">No photos yet.</div>';
+    return;
+  }
+
   grid.innerHTML = '<div class="center-msg">Loading photos…</div>';
   if(!currentGalleryEventType){ grid.innerHTML = '<div class="center-msg">No photos yet.</div>'; return; }
 
