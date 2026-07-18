@@ -776,6 +776,7 @@ function loadAdminCollections(){
         <div class="row-actions">
           <button class="btn" onclick="togglePortfolio('${c.id}', ${!c.isPublic})">${c.isPublic ? 'Remove from Portfolio' : 'Add to Portfolio'}</button>
           <button class="btn" onclick="openManager('${c.id}','${c.clientName.replace(/'/g,"\\'")}','${c.eventDate}')">Manage</button>
+          <button class="btn" style="border-color:#B23B3B; color:#B23B3B;" onclick="deleteCollection('${c.id}','${c.clientName.replace(/'/g,"\\'")}')">Delete</button>
         </div>
       </div>`).join('');
   });
@@ -796,6 +797,20 @@ function togglePortfolio(folderId, makePublic){
   api({action:'setVisibility', password:adminPassword, folderId, isPublic:makePublic}).then(res=>{
     if(res.success) loadAdminCollections();
     else alert('Error updating portfolio visibility.');
+  });
+}
+
+function deleteCollection(folderId, clientName){
+  if(!confirm(`Delete the entire "${clientName}" collection? This removes ALL its photos, events, and videos from your site (moved to Drive's trash, recoverable there for a while). This cannot be undone from here.`)) return;
+  const typed = prompt(`To confirm, type the client name exactly: ${clientName}`);
+  if(typed !== clientName){ alert('Name did not match — nothing was deleted.'); return; }
+  api({action:'deleteCollection', password:adminPassword, folderId}).then(res=>{
+    if(res.success){
+      document.getElementById('collectionManager').style.display = 'none';
+      loadAdminCollections();
+    } else {
+      alert('Error: ' + (res.error||'could not delete collection'));
+    }
   });
 }
 
