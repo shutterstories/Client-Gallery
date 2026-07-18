@@ -384,6 +384,7 @@
           <button class="btn" onclick="moveSelectedToEnd()">Move to End ⇥</button>
           <select id="moveToEventSelect" style="width:auto; padding:8px 10px; font-size:11px;"></select>
           <button class="btn" onclick="moveSelectedToFolder()">Move to Folder</button>
+          <button class="btn" style="border-color:#B23B3B; color:#B23B3B;" onclick="deleteSelectedPhotos()">🗑 Delete Selected</button>
           <button class="btn" onclick="clearSelection()">Clear Selection</button>
         </div>
       </div>
@@ -881,15 +882,16 @@ function renderAdminPhotoGrid(){
     <div class="admin-photo-tile ${selectedPhotoIds.has(p.id)?'selected':''}"
          draggable="true"
          data-index="${i}"
-         onclick="openLightbox('${p.viewUrl.replace(/'/g,"")}')"
+         onclick="toggleSelect('${p.id}', event)"
          ondragstart="onDragStart(event, ${i})"
          ondragover="onDragOver(event, ${i})"
          ondragleave="onDragLeave(event)"
          ondrop="onDrop(event, ${i})"
          ondragend="onDragEnd(event)">
-      <div class="select-checkbox" onclick="toggleSelect('${p.id}', event)">${selectedPhotoIds.has(p.id)?'✓':''}</div>
+      <div class="select-checkbox">${selectedPhotoIds.has(p.id)?'✓':''}</div>
       <img src="${p.viewUrl}" loading="lazy">
       <div class="tile-actions">
+        <div class="mini-icon" title="View full size" onclick="event.stopPropagation(); openLightbox('${p.viewUrl.replace(/'/g,"")}')">👁</div>
         <div class="mini-icon" title="Set as cover" onclick="event.stopPropagation(); setCover('${p.id}')">★</div>
         <div class="mini-icon" title="Delete" onclick="event.stopPropagation(); deletePhoto('${p.id}')">✕</div>
       </div>
@@ -956,6 +958,30 @@ function setCover(fileId){
 function deletePhoto(fileId){
   if(!confirm('Delete this photo? This also removes it from the client view.')) return;
   api({action:'deletePhoto', password:adminPassword, fileId}).then(()=> loadAdminPhotos());
+}
+
+function deleteSelectedPhotos(){
+  const count = selectedPhotoIds.size;
+  if(count === 0) return;
+  if(!confirm(`Delete ${count} selected photo(s)? This also removes them from the client view. This cannot be undone.`)) return;
+
+  const progress = document.getElementById('progressText');
+  progress.textContent = `Deleting 0 of ${count}…`;
+  let done = 0;
+
+  const idsToDelete = Array.from(selectedPhotoIds);
+  Promise.all(idsToDelete.map(fileId =>
+    api({action:'deletePhoto', password:adminPassword, fileId}).then(()=>{
+      done++;
+      progress.textContent = `Deleting ${done} of ${count}…`;
+    }).catch(()=>{
+      done++;
+    })
+  )).then(()=>{
+    progress.textContent = `Deleted ${count} photo(s).`;
+    selectedPhotoIds = new Set();
+    loadAdminPhotos();
+  });
 }
 
 let uploadErrors = [];
