@@ -669,9 +669,14 @@ function loadAdminCollections(){
   api({action:'listCollections'}).then(res=>{
     if(!res.success){ list.innerHTML = '<div class="center-msg">Could not load.</div>'; return; }
     if(res.collections.length===0){ list.innerHTML = '<div class="center-msg">No collections yet — create one above.</div>'; return; }
-    list.innerHTML = res.collections.map(c => `
+    currentCollectionsOrder = res.collections.map(c=>c.id);
+    list.innerHTML = res.collections.map((c,i) => `
       <div class="collection-list-row">
         <div style="display:flex; align-items:center; gap:14px;">
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <span onclick="moveCollectionOrder(${i},-1)" style="cursor:pointer; opacity:${i===0?0.25:0.7};" title="Move up">▲</span>
+            <span onclick="moveCollectionOrder(${i},1)" style="cursor:pointer; opacity:${i===res.collections.length-1?0.25:0.7};" title="Move down">▼</span>
+          </div>
           <div style="width:52px; height:52px; border-radius:4px; overflow:hidden; flex-shrink:0; background:var(--line);">
             ${c.coverFileId ? `<img src="https://drive.google.com/thumbnail?id=${c.coverFileId}&sz=w200" style="width:100%; height:100%; object-fit:cover; display:block;">` : ''}
           </div>
@@ -686,6 +691,17 @@ function loadAdminCollections(){
         </div>
       </div>`).join('');
   });
+}
+
+let currentCollectionsOrder = [];
+
+function moveCollectionOrder(index, direction){
+  const newIndex = index + direction;
+  if(newIndex < 0 || newIndex >= currentCollectionsOrder.length) return;
+  const temp = currentCollectionsOrder[index];
+  currentCollectionsOrder[index] = currentCollectionsOrder[newIndex];
+  currentCollectionsOrder[newIndex] = temp;
+  api({action:'reorderCollections', password:adminPassword, orderedIds:currentCollectionsOrder}).then(()=> loadAdminCollections());
 }
 
 function togglePortfolio(folderId, makePublic){
