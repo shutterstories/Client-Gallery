@@ -1242,7 +1242,7 @@ function assignPhotoAsVideoCover(fileId){
 
 function deletePhoto(fileId){
   if(!confirm('Delete this photo? This also removes it from the client view.')) return;
-  api({action:'deletePhoto', password:adminPassword, fileId}).then(()=> loadAdminPhotos());
+  api({action:'deletePhoto', password:adminPassword, fileId, folderId:currentManagedFolderId}).then(()=> loadAdminPhotos());
 }
 
 function deleteSelectedPhotos(){
@@ -1256,7 +1256,7 @@ function deleteSelectedPhotos(){
 
   const idsToDelete = Array.from(selectedPhotoIds);
   Promise.all(idsToDelete.map(fileId =>
-    api({action:'deletePhoto', password:adminPassword, fileId}).then(()=>{
+    api({action:'deletePhoto', password:adminPassword, fileId, folderId:currentManagedFolderId}).then(()=>{
       done++;
       progress.textContent = `Deleting ${done} of ${count}…`;
     }).catch(()=>{
