@@ -170,6 +170,8 @@
   .lightbox-img{max-width:100%; max-height:100%; object-fit:contain; border-radius:2px; cursor:default;}
   .lightbox-close{position:absolute; top:16px; right:20px; color:#fff; font-size:28px; cursor:pointer; width:40px; height:40px; display:flex; align-items:center; justify-content:center;}
   .lightbox-nav{position:absolute; top:50%; transform:translateY(-50%); color:#fff; font-size:44px; cursor:pointer; width:52px; height:52px; display:flex; align-items:center; justify-content:center; opacity:0.7; transition:opacity .2s; user-select:none;}
+  .video-picker-item{padding:14px 16px; border:1px solid var(--line); border-radius:4px; margin-bottom:8px; cursor:pointer; font-size:13px; letter-spacing:.5px; color:var(--navy); transition:all .2s;}
+  .video-picker-item:hover{background:var(--gold); border-color:var(--gold);}
   .lightbox-nav:hover{opacity:1;}
   .lightbox-prev{left:8px;}
   .lightbox-next{right:8px;}
@@ -364,8 +366,12 @@
       </div>
 
       <div class="card" style="background:var(--paper);">
-        <h3 style="font-size:16px;">Highlight Video (optional)</h3>
-        <div id="videoStatus" style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">No video uploaded yet.</div>
+        <h3 style="font-size:16px;">Highlight Videos (optional)</h3>
+        <div id="videoStatus" style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">No videos added yet.</div>
+        <div id="videoListWrap" style="margin-bottom:16px;"></div>
+
+        <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin-bottom:6px;">TITLE FOR THIS VIDEO (e.g. "Teaser", "Full Film")</label>
+        <input type="text" id="videoLabelInput" placeholder="e.g. Teaser" style="margin-bottom:14px;">
 
         <div style="font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin-bottom:6px;">OPTION A — SMALL VIDEOS (under ~50MB): upload directly</div>
         <input type="file" id="videoFileInput" accept="video/*" onchange="handleVideoUpload(this.files[0])">
@@ -440,6 +446,15 @@
 <div id="videoLightboxOverlay" style="display:none; position:fixed; inset:0; background:#000; z-index:250; align-items:center; justify-content:center;">
   <div class="lightbox-close" style="z-index:2;" onclick="closeVideoLightbox()">✕</div>
   <iframe id="videoLightboxFrame" src="" width="100%" height="100%" style="border:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+</div>
+
+<!-- ============ VIDEO PICKER (shown only when a collection has more than one video) ============ -->
+<div id="videoPickerOverlay" style="display:none; position:fixed; inset:0; background:rgba(10,27,51,0.92); z-index:260; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this) closeVideoPicker()">
+  <div style="background:var(--paper-2); max-width:340px; width:100%; border-radius:6px; padding:26px; position:relative;">
+    <div onclick="closeVideoPicker()" style="position:absolute; top:14px; right:16px; cursor:pointer; font-size:18px; color:var(--ink-soft);">✕</div>
+    <h3 style="font-family:'Cormorant Garamond'; font-size:20px; color:var(--navy); margin-bottom:16px;">Choose a video</h3>
+    <div id="videoPickerList"></div>
+  </div>
 </div>
 
 <!-- ============ GET QUOTE MODAL ============ -->
@@ -747,19 +762,45 @@ function openManager(folderId, clientName, eventDate){
     currentManagedEventType = currentManagedEvents[0] || null;
     renderEventPills();
     loadAdminPhotos();
-    document.getElementById('videoStatus').textContent = res.videoFileId ? 'Video uploaded ✓ (uploading a new one will replace it)' : 'No video uploaded yet.';
+    renderVideoList(res.videos || []);
+  });
+}
+
+function renderVideoList(videos){
+  const wrap = document.getElementById('videoListWrap');
+  const status = document.getElementById('videoStatus');
+  status.textContent = videos.length > 0
+    ? `${videos.length} video${videos.length>1?'s':''} added`
+    : 'No videos added yet.';
+  wrap.innerHTML = videos.map(v => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--paper-2); border:1px solid var(--line); border-radius:3px; margin-bottom:6px; font-size:12px;">
+      <span>${v.label || 'Video'}</span>
+      <span onclick="deleteVideo('${v.id}')" style="cursor:pointer; color:#B23B3B;" title="Remove this video">✕</span>
+    </div>`).join('');
+}
+
+function deleteVideo(videoFileId){
+  if(!confirm('Remove this video from the gallery?')) return;
+  api({action:'deleteVideo', password:adminPassword, folderId:currentManagedFolderId, videoFileId}).then(res=>{
+    if(res.success){
+      api({action:'getCollectionMeta', folderId:currentManagedFolderId}).then(res2=> renderVideoList(res2.videos || []));
+    } else {
+      alert('Error removing video: ' + (res.error||'unknown'));
+    }
   });
 }
 
 function handleVideoUpload(file){
   if(!file) return;
+  const label = document.getElementById('videoLabelInput').value.trim() || 'Video';
   const progress = document.getElementById('videoProgressText');
   progress.textContent = `Uploading video… (${(file.size/1024/1024).toFixed(1)} MB — large videos can take a few minutes)`;
   fileToBase64(file).then(base64Data=>{
-    const uploadCall = api({action:'uploadVideo', password:adminPassword, folderId:currentManagedFolderId, fileName:file.name, mimeType:file.type, base64Data}).then(res=>{
+    const uploadCall = api({action:'uploadVideo', password:adminPassword, folderId:currentManagedFolderId, fileName:file.name, mimeType:file.type, base64Data, label}).then(res=>{
       if(res.success){
         progress.textContent = 'Video uploaded!';
-        document.getElementById('videoStatus').textContent = 'Video uploaded ✓ (uploading a new one will replace it)';
+        document.getElementById('videoLabelInput').value = '';
+        api({action:'getCollectionMeta', folderId:currentManagedFolderId}).then(res2=> renderVideoList(res2.videos || []));
       } else {
         progress.textContent = 'Error: ' + (res.error||'upload failed');
       }
@@ -799,6 +840,7 @@ function extractDriveFileId(input){
 
 function linkVideoFromDrive(){
   const raw = document.getElementById('videoLinkInput').value;
+  const label = document.getElementById('videoLabelInput').value.trim() || 'Video';
   const status = document.getElementById('videoLinkStatus');
   const fileId = extractDriveFileId(raw);
   if(!fileId){
@@ -806,11 +848,12 @@ function linkVideoFromDrive(){
     return;
   }
   status.textContent = 'Linking video…';
-  api({action:'setVideoId', password:adminPassword, folderId:currentManagedFolderId, videoFileId:fileId}).then(res=>{
+  api({action:'setVideoId', password:adminPassword, folderId:currentManagedFolderId, videoFileId:fileId, label}).then(res=>{
     if(res.success){
       status.textContent = 'Video linked!';
-      document.getElementById('videoStatus').textContent = 'Video uploaded ✓ (uploading a new one will replace it)';
       document.getElementById('videoLinkInput').value = '';
+      document.getElementById('videoLabelInput').value = '';
+      api({action:'getCollectionMeta', folderId:currentManagedFolderId}).then(res2=> renderVideoList(res2.videos || []));
     } else {
       status.textContent = 'Error: ' + (res.error || 'could not link video');
     }
@@ -1247,7 +1290,7 @@ function openClientGallery(folderId, isShowcaseView){
     document.getElementById('galDownloadAllBtn').style.display = currentGalleryIsPublic ? 'none' : 'inline-flex';
     document.getElementById('galDownloadBar').style.display = currentGalleryIsPublic ? 'none' : 'flex';
     setupDownloadBarReveal();
-    currentGalleryVideoFileId = res.videoFileId || null;
+    currentGalleryVideos = res.videos || [];
     currentGalleryEvents = res.events.map(e=>e.name);
     currentGalleryEventType = currentGalleryEvents[0] || null;
     renderGalleryTabs();
@@ -1255,13 +1298,29 @@ function openClientGallery(folderId, isShowcaseView){
   });
 }
 
-let currentGalleryVideoFileId = null;
+let currentGalleryVideos = [];
 
-function openVideoLightbox(){
-  if(!currentGalleryVideoFileId) return;
+function openVideoTab(){
+  if(currentGalleryVideos.length === 0) return;
+  if(currentGalleryVideos.length === 1){
+    playVideo(currentGalleryVideos[0].id);
+    return;
+  }
+  const picker = document.getElementById('videoPickerOverlay');
+  document.getElementById('videoPickerList').innerHTML = currentGalleryVideos.map(v => `
+    <div class="video-picker-item" onclick="closeVideoPicker(); playVideo('${v.id}')">${v.label || 'Video'}</div>
+  `).join('');
+  picker.style.display = 'flex';
+}
+
+function closeVideoPicker(){
+  document.getElementById('videoPickerOverlay').style.display = 'none';
+}
+
+function playVideo(videoFileId){
   const overlay = document.getElementById('videoLightboxOverlay');
   const frame = document.getElementById('videoLightboxFrame');
-  frame.src = `https://drive.google.com/file/d/${currentGalleryVideoFileId}/preview`;
+  frame.src = `https://drive.google.com/file/d/${videoFileId}/preview`;
   overlay.style.display = 'flex';
 
   // Use the browser's real fullscreen mode (not just CSS sizing) so rotation
@@ -1296,8 +1355,8 @@ function closeVideoLightbox(){
 
 function renderGalleryTabs(){
   const tabs = document.getElementById('galEventTabs');
-  const videoTabHtml = currentGalleryVideoFileId
-    ? `<button onclick="openVideoLightbox()">Video</button>`
+  const videoTabHtml = currentGalleryVideos.length > 0
+    ? `<button onclick="openVideoTab()">Video${currentGalleryVideos.length>1?'s':''}</button>`
     : '';
   tabs.innerHTML = videoTabHtml + currentGalleryEvents.map(ev => `
     <button class="${ev===currentGalleryEventType?'active':''}" onclick="selectGalleryEvent('${ev.replace(/'/g,"\\'")}')">${ev}</button>
