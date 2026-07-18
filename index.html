@@ -618,7 +618,12 @@ function buildHomeCatFilter(collections){
 function renderHomeGrid(collections, filter){
   const grid = document.getElementById('homeGrid');
   const publicOnly = collections.filter(c => c.isPublic);
-  const filtered = filter==='all' ? publicOnly : publicOnly.filter(c=>c.category===filter);
+  // "Videos" category is intentionally hidden from the "All" tab — it only
+  // shows up when its own dedicated tab is selected, keeping the main
+  // portfolio feed to photo collections.
+  const filtered = filter==='all'
+    ? publicOnly.filter(c => (c.category||'').toLowerCase() !== 'videos')
+    : publicOnly.filter(c => c.category===filter);
   if(filtered.length===0){ grid.innerHTML = '<div class="center-msg">No portfolio pieces published yet.</div>'; return; }
   grid.innerHTML = filtered.map(c => `
     <div class="collection-card" onclick="location.href='?gallery=${c.id}&view=portfolio'">
