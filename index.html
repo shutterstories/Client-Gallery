@@ -663,8 +663,8 @@ function buildPortfolioCards(collections){
     Object.keys(c.publicVideos || {}).forEach(videoId=>{
       const vid = c.publicVideos[videoId];
       cards.push({
-        clientName: c.clientName, eventDate: c.eventDate, coverFileId: videoId,
-        category: vid.label || 'Video', galleryId: c.id, eventScope: null, videoScope: videoId,
+        clientName: c.clientName + (vid.label ? ' — ' + vid.label : ''), eventDate: c.eventDate, coverFileId: videoId,
+        category: 'Videos', galleryId: c.id, eventScope: null, videoScope: videoId,
         excludeFromAll: true
       });
     });
