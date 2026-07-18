@@ -663,7 +663,8 @@ function buildPortfolioCards(collections){
     Object.keys(c.publicVideos || {}).forEach(videoId=>{
       const vid = c.publicVideos[videoId];
       cards.push({
-        clientName: c.clientName + (vid.label ? ' — ' + vid.label : ''), eventDate: c.eventDate, coverFileId: videoId,
+        clientName: c.clientName + (vid.label ? ' — ' + vid.label : ''), eventDate: c.eventDate,
+        coverFileId: vid.coverFileId || videoId,
         category: 'Videos', galleryId: c.id, eventScope: null, videoScope: videoId,
         excludeFromAll: true
       });
@@ -821,10 +822,13 @@ function openManager(folderId, clientName, eventDate){
 }
 
 let currentManagedPublicVideos = new Set();
+let currentManagedVideoLabels = {};
 
 function renderVideoList(videos){
   const wrap = document.getElementById('videoListWrap');
   const status = document.getElementById('videoStatus');
+  currentManagedVideoLabels = {};
+  videos.forEach(v => currentManagedVideoLabels[v.id] = v.label || 'Video');
   status.textContent = videos.length > 0
     ? `${videos.length} video${videos.length>1?'s':''} added`
     : 'No videos added yet.';
@@ -836,6 +840,7 @@ function renderVideoList(videos){
         <span onclick="deleteVideo('${v.id}')" style="cursor:pointer; color:#B23B3B;" title="Remove this video">✕</span>
       </span>
     </div>`).join('');
+  renderAdminPhotoGrid();
 }
 
 function toggleVideoPortfolio(videoFileId, label){
@@ -1114,6 +1119,7 @@ function renderAdminPhotoGrid(){
         <div class="mini-icon" title="View full size" onclick="event.stopPropagation(); openLightbox('${p.viewUrl.replace(/'/g,"")}')">👁</div>
         <div class="mini-icon" title="Set as collection cover" onclick="event.stopPropagation(); setCover('${p.id}')">★</div>
         ${currentManagedPublicEvents.has(currentManagedEventType) ? `<div class="mini-icon" title="Set as this event's portfolio card cover" onclick="event.stopPropagation(); setEventCover('${p.id}')">🖼</div>` : ''}
+        ${currentManagedPublicVideos.size > 0 ? `<div class="mini-icon" title="Set as a video's portfolio card cover" onclick="event.stopPropagation(); assignPhotoAsVideoCover('${p.id}')">🎬</div>` : ''}
         <div class="mini-icon" title="Delete" onclick="event.stopPropagation(); deletePhoto('${p.id}')">✕</div>
       </div>
     </div>`).join('');
@@ -1180,6 +1186,29 @@ function setEventCover(fileId){
   api({action:'setEventCover', password:adminPassword, folderId:currentManagedFolderId, eventType:currentManagedEventType, fileId}).then(res=>{
     if(res.success){
       alert(`Cover updated for the "${currentManagedEventType}" portfolio card.`);
+    } else {
+      alert('Error: ' + (res.error||'could not set cover'));
+    }
+  });
+}
+
+function assignPhotoAsVideoCover(fileId){
+  const publicVideoIds = Array.from(currentManagedPublicVideos);
+  let targetVideoId;
+
+  if(publicVideoIds.length === 1){
+    targetVideoId = publicVideoIds[0];
+  } else {
+    const options = publicVideoIds.map(id => currentManagedVideoLabels[id] || 'Video').join('", "');
+    const typed = prompt(`Which video should use this photo as its cover? Type its exact title:\n"${options}"`);
+    if(!typed) return;
+    targetVideoId = publicVideoIds.find(id => (currentManagedVideoLabels[id]||'').toLowerCase() === typed.trim().toLowerCase());
+    if(!targetVideoId){ alert('No published video matches that title exactly — please try again.'); return; }
+  }
+
+  api({action:'setVideoCover', password:adminPassword, folderId:currentManagedFolderId, videoFileId:targetVideoId, fileId}).then(res=>{
+    if(res.success){
+      alert(`Cover updated for the "${currentManagedVideoLabels[targetVideoId]}" video card.`);
     } else {
       alert('Error: ' + (res.error||'could not set cover'));
     }
