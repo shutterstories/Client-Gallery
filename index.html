@@ -857,7 +857,31 @@ function renderVideoList(videos){
         <span onclick="deleteVideo('${v.id}')" style="cursor:pointer; color:#B23B3B;" title="Remove this video">✕</span>
       </span>
     </div>`).join('');
+
+  // Catch any leftover portfolio entries from videos that were deleted before
+  // this cleanup existed — these have no matching row above, so they'd
+  // otherwise be stuck showing broken on the portfolio with no way to fix them.
+  const orphanedIds = Array.from(currentManagedPublicVideos).filter(id => !videos.some(v => v.id === id));
+  if(orphanedIds.length > 0){
+    wrap.innerHTML += orphanedIds.map(id => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#fff3e0; border:1px solid #e0b070; border-radius:3px; margin-bottom:6px; font-size:12px;">
+        <span>⚠️ Leftover portfolio entry (video already deleted)</span>
+        <span onclick="clearOrphanedVideo('${id}')" style="cursor:pointer; color:#B23B3B;" title="Remove this leftover entry">✕ Clear</span>
+      </div>`).join('');
+  }
+
   renderAdminPhotoGrid();
+}
+
+function clearOrphanedVideo(videoFileId){
+  api({action:'setVideoVisibility', password:adminPassword, folderId:currentManagedFolderId, videoFileId, isPublic:false}).then(res=>{
+    if(res.success){
+      currentManagedPublicVideos.delete(videoFileId);
+      renderVideoList(currentManagedAllVideos);
+    } else {
+      alert('Error: ' + (res.error||'could not clear this entry'));
+    }
+  });
 }
 
 function toggleVideoPortfolio(videoFileId, label){
