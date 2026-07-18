@@ -366,8 +366,20 @@
       <div class="card" style="background:var(--paper);">
         <h3 style="font-size:16px;">Highlight Video (optional)</h3>
         <div id="videoStatus" style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">No video uploaded yet.</div>
+
+        <div style="font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin-bottom:6px;">OPTION A — SMALL VIDEOS (under ~50MB): upload directly</div>
         <input type="file" id="videoFileInput" accept="video/*" onchange="handleVideoUpload(this.files[0])">
         <div class="progress-text" id="videoProgressText"></div>
+
+        <div style="font-size:11px; letter-spacing:1px; color:var(--ink-soft); margin:16px 0 6px;">OPTION B — LARGE VIDEOS: upload to Google Drive yourself, then paste the share link here</div>
+        <div style="font-size:11px; color:var(--ink-soft); margin-bottom:8px; line-height:1.5;">
+          1. Upload the video file into your "Client Galleries" Drive folder (drag & drop on drive.google.com — no size limit there)<br>
+          2. Right-click the file → Share → "Anyone with the link" → Copy link<br>
+          3. Paste that link below
+        </div>
+        <input type="text" id="videoLinkInput" placeholder="Paste Google Drive share link here" style="margin-bottom:8px;">
+        <button class="btn" onclick="linkVideoFromDrive()">Link This Video</button>
+        <div class="progress-text" id="videoLinkStatus"></div>
       </div>
 
       <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
@@ -716,9 +728,9 @@ function openManager(folderId, clientName, eventDate){
 function handleVideoUpload(file){
   if(!file) return;
   const progress = document.getElementById('videoProgressText');
-  progress.textContent = 'Uploading video…';
+  progress.textContent = `Uploading video… (${(file.size/1024/1024).toFixed(1)} MB — large videos can take a few minutes)`;
   fileToBase64(file).then(base64Data=>{
-    api({action:'uploadVideo', password:adminPassword, folderId:currentManagedFolderId, fileName:file.name, mimeType:file.type, base64Data}).then(res=>{
+    const uploadCall = api({action:'uploadVideo', password:adminPassword, folderId:currentManagedFolderId, fileName:file.name, mimeType:file.type, base64Data}).then(res=>{
       if(res.success){
         progress.textContent = 'Video uploaded!';
         document.getElementById('videoStatus').textContent = 'Video uploaded ✓ (uploading a new one will replace it)';
@@ -726,8 +738,58 @@ function handleVideoUpload(file){
         progress.textContent = 'Error: ' + (res.error||'upload failed');
       }
     });
+
+    // Safety net: Apps Script itself cuts off any single execution at 6 minutes,
+    // so if we haven't heard back by 5 minutes, it's not coming back — show an
+    // error instead of leaving "Uploading video…" on screen forever.
+    const uploadTimeout = new Promise((_, reject)=>{
+      setTimeout(()=> reject(new Error('No response after 5 minutes — the file may be too large, or your connection dropped. Try a smaller/compressed video, or a more stable connection.')), 300000);
+    });
+
+    return Promise.race([uploadCall, uploadTimeout]);
   }).catch(err=>{
-    progress.textContent = 'Error reading file: ' + err.message;
+    progress.textContent = 'Error: ' + err.message;
+  });
+}
+
+function extractDriveFileId(input){
+  input = input.trim();
+  // Handles formats like:
+  //   https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+  //   https://drive.google.com/open?id=FILE_ID
+  //   or just a bare FILE_ID pasted directly
+  const patterns = [
+    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+    /[?&]id=([a-zA-Z0-9_-]+)/
+  ];
+  for(const re of patterns){
+    const m = input.match(re);
+    if(m) return m[1];
+  }
+  // No URL pattern matched — assume they pasted the raw file ID itself
+  if(/^[a-zA-Z0-9_-]{10,}$/.test(input)) return input;
+  return null;
+}
+
+function linkVideoFromDrive(){
+  const raw = document.getElementById('videoLinkInput').value;
+  const status = document.getElementById('videoLinkStatus');
+  const fileId = extractDriveFileId(raw);
+  if(!fileId){
+    status.textContent = 'Could not find a valid Drive link/ID in that text — please check and try again.';
+    return;
+  }
+  status.textContent = 'Linking video…';
+  api({action:'setVideoId', password:adminPassword, folderId:currentManagedFolderId, videoFileId:fileId}).then(res=>{
+    if(res.success){
+      status.textContent = 'Video linked!';
+      document.getElementById('videoStatus').textContent = 'Video uploaded ✓ (uploading a new one will replace it)';
+      document.getElementById('videoLinkInput').value = '';
+    } else {
+      status.textContent = 'Error: ' + (res.error || 'could not link video');
+    }
+  }).catch(err=>{
+    status.textContent = 'Network error: ' + err.message;
   });
 }
 
