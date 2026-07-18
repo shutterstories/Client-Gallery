@@ -157,8 +157,6 @@
   .event-tabs{display:flex; gap:30px; padding:0 6vw; border-bottom:1px solid var(--line); overflow-x:auto; background:var(--paper-2);}
   .event-tabs button{background:none; border:none; font-size:13px; letter-spacing:1px; color:var(--ink-soft); padding:14px 0; border-bottom:2px solid transparent; white-space:nowrap; cursor:pointer;}
   .event-tabs button.active{color:var(--navy); border-color:var(--gold); font-weight:600;}
-  .video-tab-box{display:inline-flex; align-items:center; gap:8px; padding:12px 20px; border:1px solid var(--gold); border-radius:4px; background:var(--navy); color:var(--paper-2); font-size:13px; letter-spacing:1px; cursor:pointer; transition:background .2s;}
-  .video-tab-box:hover{background:var(--navy-2);}
   .photo-grid{display:grid; grid-template-columns:repeat(2,1fr); grid-auto-flow:dense; gap:14px; padding:20px 6vw 100px;}
   .photo-tile{position:relative; aspect-ratio:2/3; overflow:hidden; background:linear-gradient(150deg,#eadfc4,#c9a877); border-radius:8px; box-shadow:0 4px 18px rgba(10,27,51,0.10); cursor:pointer;}
   .photo-tile.wide{grid-column:span 2; aspect-ratio:3/2;}
@@ -429,9 +427,6 @@
       <div class="meta" id="galSub" style="font-size:11px; letter-spacing:2px; color:var(--ink-soft);">PRIVATE GALLERY</div>
     </div>
     <button class="btn primary" id="galDownloadAllBtn" style="font-size:10px; padding:7px 12px;" onclick="downloadEntireGallery()">⬇ Download All Folders</button>
-  </div>
-  <div id="galVideoTabWrap" style="display:none; padding:14px 6vw 0;">
-    <div class="video-tab-box" onclick="openVideoLightbox()">🎥 Highlight Video</div>
   </div>
   <div class="event-tabs" id="galEventTabs"></div>
   <div class="photo-grid" id="galPhotoGrid"></div>
@@ -1232,7 +1227,6 @@ function openClientGallery(folderId, isShowcaseView){
     document.getElementById('galDownloadBar').style.display = currentGalleryIsPublic ? 'none' : 'flex';
     setupDownloadBarReveal();
     currentGalleryVideoFileId = res.videoFileId || null;
-    document.getElementById('galVideoTabWrap').style.display = currentGalleryVideoFileId ? 'block' : 'none';
     currentGalleryEvents = res.events.map(e=>e.name);
     currentGalleryEventType = currentGalleryEvents[0] || null;
     renderGalleryTabs();
@@ -1255,7 +1249,10 @@ function closeVideoLightbox(){
 
 function renderGalleryTabs(){
   const tabs = document.getElementById('galEventTabs');
-  tabs.innerHTML = currentGalleryEvents.map(ev => `
+  const videoTabHtml = currentGalleryVideoFileId
+    ? `<button onclick="openVideoLightbox()">Video</button>`
+    : '';
+  tabs.innerHTML = videoTabHtml + currentGalleryEvents.map(ev => `
     <button class="${ev===currentGalleryEventType?'active':''}" onclick="selectGalleryEvent('${ev.replace(/'/g,"\\'")}')">${ev}</button>
   `).join('');
 }
