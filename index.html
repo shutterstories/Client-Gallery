@@ -605,9 +605,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(location.search);
   const galleryId = params.get('gallery');
   const isShowcaseView = params.get('view') === 'portfolio';
+  const eventScope = params.get('event');
   if(galleryId){
     document.querySelector('.topbar').style.display = 'none';
-    openClientGallery(galleryId, isShowcaseView);
+    openClientGallery(galleryId, isShowcaseView, eventScope);
   } else {
     loadHomeCollections();
   }
@@ -618,37 +619,66 @@ function loadHomeCollections(){
   const grid = document.getElementById('homeGrid');
   api({action:'listCollections'}).then(res=>{
     if(!res.success){ grid.innerHTML = '<div class="center-msg">Could not load collections.</div>'; return; }
-    buildHomeCatFilter(res.collections);
-    renderHomeGrid(res.collections, 'all');
+    const cards = buildPortfolioCards(res.collections);
+    buildHomeCatFilter(cards);
+    renderHomeGrid(cards, 'all');
   }).catch(()=>{ grid.innerHTML = '<div class="center-msg">Backend not connected yet.</div>'; });
 }
 
-function buildHomeCatFilter(collections){
+// Turns raw collections into the flat list of cards actually shown on the
+// portfolio homepage — one card per whole public collection, PLUS one card
+// per individually-published event inside any collection (e.g. just its
+// "Pre-Wedding" folder). Event-level cards always link with an event scope
+// so they open showing only that one event, and are always excluded from "All".
+function buildPortfolioCards(collections){
+  const cards = [];
+  collections.forEach(c=>{
+    if(c.isPublic){
+      cards.push({
+        clientName: c.clientName, eventDate: c.eventDate, coverFileId: c.coverFileId,
+        category: c.category, galleryId: c.id, eventScope: null,
+        excludeFromAll: (c.category||'').toLowerCase() === 'videos'
+      });
+    }
+    Object.keys(c.publicEvents || {}).forEach(eventName=>{
+      const ev = c.publicEvents[eventName];
+      cards.push({
+        clientName: c.clientName, eventDate: c.eventDate, coverFileId: ev.coverFileId,
+        category: eventName, galleryId: c.id, eventScope: eventName,
+        excludeFromAll: true
+      });
+    });
+  });
+  return cards;
+}
+
+function buildHomeCatFilter(cards){
   const bar = document.getElementById('homeCatFilter');
-  const cats = [...new Set(collections.filter(c=>c.isPublic).map(c=>c.category).filter(Boolean))];
+  const cats = [...new Set(cards.map(c=>c.category).filter(Boolean))];
   bar.innerHTML = '<button class="active" data-cat="all">All</button>' +
     cats.map(cat => `<button data-cat="${cat}">${cat}</button>`).join('');
 }
 
-function renderHomeGrid(collections, filter){
+function renderHomeGrid(cards, filter){
   const grid = document.getElementById('homeGrid');
-  const publicOnly = collections.filter(c => c.isPublic);
-  // "Videos" category is intentionally hidden from the "All" tab — it only
-  // shows up when its own dedicated tab is selected, keeping the main
-  // portfolio feed to photo collections.
   const filtered = filter==='all'
-    ? publicOnly.filter(c => (c.category||'').toLowerCase() !== 'videos')
-    : publicOnly.filter(c => c.category===filter);
+    ? cards.filter(c => !c.excludeFromAll)
+    : cards.filter(c => c.category===filter);
   if(filtered.length===0){ grid.innerHTML = '<div class="center-msg">No portfolio pieces published yet.</div>'; return; }
-  grid.innerHTML = filtered.map(c => `
-    <div class="collection-card" onclick="location.href='?gallery=${c.id}&view=portfolio'">
+  grid.innerHTML = filtered.map(c => {
+    const href = c.eventScope
+      ? `?gallery=${c.galleryId}&view=portfolio&event=${encodeURIComponent(c.eventScope)}`
+      : `?gallery=${c.galleryId}&view=portfolio`;
+    return `
+    <div class="collection-card" onclick="location.href='${href}'">
       <div class="collection-cover" style="${c.coverFileId ? `background-image:url('https://drive.google.com/thumbnail?id=${c.coverFileId}&sz=w1000')` : ''}">
         <div class="collection-caption">
           <h3>${c.clientName}</h3>
           <p>${c.eventDate}</p>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 document.getElementById('homeCatFilter').addEventListener('click', e=>{
@@ -656,7 +686,7 @@ document.getElementById('homeCatFilter').addEventListener('click', e=>{
   document.querySelectorAll('#homeCatFilter button').forEach(b=>b.classList.remove('active'));
   e.target.classList.add('active');
   api({action:'listCollections'}).then(res=>{
-    if(res.success) renderHomeGrid(res.collections, e.target.dataset.cat);
+    if(res.success) renderHomeGrid(buildPortfolioCards(res.collections), e.target.dataset.cat);
   });
 });
 
@@ -760,6 +790,7 @@ function openManager(folderId, clientName, eventDate){
   api({action:'getCollectionMeta', folderId}).then(res=>{
     currentManagedEvents = res.events.map(e=>e.name);
     currentManagedEventType = currentManagedEvents[0] || null;
+    currentManagedPublicEvents = new Set(Object.keys(res.publicEvents || {}));
     renderEventPills();
     loadAdminPhotos();
     renderVideoList(res.videos || []);
@@ -881,10 +912,27 @@ function renderEventPills(){
       ${i>0 ? `<span onclick="moveEventPill(${i},-1)" style="opacity:.6; cursor:pointer; margin-right:6px;" title="Move left">◀</span>` : ''}
       <span onclick="selectManagedEvent('${ev.replace(/'/g,"\\'")}')">${ev}</span>
       ${i<currentManagedEvents.length-1 ? `<span onclick="moveEventPill(${i},1)" style="opacity:.6; cursor:pointer; margin-left:6px;" title="Move right">▶</span>` : ''}
+      <span onclick="toggleEventPortfolio('${ev.replace(/'/g,"\\'")}', event)" style="margin-left:8px; cursor:pointer; color:${currentManagedPublicEvents.has(ev)?'var(--gold)':'inherit'};" title="${currentManagedPublicEvents.has(ev) ? 'Shown on portfolio under its own \u0027'+ev+'\u0027 tab \u2014 tap to hide' : 'Show this event on portfolio under its own tab'}">${currentManagedPublicEvents.has(ev) ? '●' : '○'}</span>
       <span onclick="deleteEventType('${ev.replace(/'/g,"\\'")}')" style="margin-left:8px; opacity:.6; cursor:pointer;" title="Delete this event">✕</span>
     </div>
   `).join('');
   updateUploadBoxVisibility();
+}
+
+let currentManagedPublicEvents = new Set();
+
+function toggleEventPortfolio(eventName, evt){
+  evt.stopPropagation();
+  const makePublic = !currentManagedPublicEvents.has(eventName);
+  api({action:'setEventVisibility', password:adminPassword, folderId:currentManagedFolderId, eventType:eventName, isPublic:makePublic}).then(res=>{
+    if(res.success){
+      if(makePublic) currentManagedPublicEvents.add(eventName);
+      else currentManagedPublicEvents.delete(eventName);
+      renderEventPills();
+    } else {
+      alert('Error updating portfolio visibility for this event: ' + (res.error||'unknown'));
+    }
+  });
 }
 
 function moveEventPill(index, direction){
@@ -1272,7 +1320,7 @@ function setupDownloadBarReveal(){
   downloadBarObserver.observe(target);
 }
 
-function openClientGallery(folderId, isShowcaseView){
+function openClientGallery(folderId, isShowcaseView, eventScope){
   currentGalleryFolderId = folderId;
   showPage('clientGalleryPage');
   api({action:'getCollectionMeta', folderId}).then(res=>{
@@ -1290,8 +1338,25 @@ function openClientGallery(folderId, isShowcaseView){
     document.getElementById('galDownloadAllBtn').style.display = currentGalleryIsPublic ? 'none' : 'inline-flex';
     document.getElementById('galDownloadBar').style.display = currentGalleryIsPublic ? 'none' : 'flex';
     setupDownloadBarReveal();
-    currentGalleryVideos = res.videos || [];
-    currentGalleryEvents = res.events.map(e=>e.name);
+
+    let events = res.events.map(e=>e.name);
+    let videos = res.videos || [];
+
+    // A portfolio card can link to just ONE specific event (e.g. "Pre-Wedding")
+    // rather than the whole collection — when that's the case, hide every
+    // other tab so only that one event's content is shown.
+    if(eventScope){
+      if(events.includes(eventScope)){
+        events = [eventScope];
+        videos = [];
+      } else {
+        // Scoped specifically to the Videos card — show only the video tab.
+        events = [];
+      }
+    }
+
+    currentGalleryVideos = videos;
+    currentGalleryEvents = events;
     currentGalleryEventType = currentGalleryEvents[0] || null;
     renderGalleryTabs();
     loadGalleryPhotos();
