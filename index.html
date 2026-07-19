@@ -452,7 +452,7 @@
   <div class="photo-grid" id="galPhotoGrid"></div>
   <div class="download-bar" id="galDownloadBar">
     <div class="dl-note">Web-resolution images</div>
-    <button class="dl-mini-btn" onclick="downloadAllCurrentTab()">⬇ Download</button>
+    <button class="dl-mini-btn" onclick="downloadAllCurrentTab(event)">⬇ Download</button>
   </div>
 </div>
 
@@ -1681,19 +1681,37 @@ function renderPhotoGridDisplay(photos){
   }).join('');
 }
 
-function downloadEntireGallery(){
-  if(!currentGalleryFolderUrl) return;
-  alert('Opening your complete gallery folder in Google Drive (web-resolution images) — select all and download as a zip from there.');
-  window.open(currentGalleryFolderUrl, '_blank');
+function runZipDownload(btn, payload){
+  if(!btn) return;
+  const originalLabel = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Preparing zip…';
+
+  api(payload).then(res=>{
+    if(res.success && res.downloadUrl){
+      window.location.href = res.downloadUrl;
+    } else {
+      alert(res.error || 'Could not prepare the zip. Please try again in a moment.');
+    }
+  }).catch(()=>{
+    alert('Something went wrong preparing the zip. Please try again.');
+  }).finally(()=>{
+    btn.disabled = false;
+    btn.innerHTML = originalLabel;
+  });
 }
 
-function downloadAllCurrentTab(){
+function downloadEntireGallery(){
+  if(!currentGalleryFolderId) return;
+  runZipDownload(document.getElementById('galDownloadAllBtn'), {
+    action:'downloadZip', folderId:currentGalleryFolderId, eventType:'ALL', resolution:'compressed'
+  });
+}
+
+function downloadAllCurrentTab(event){
   if(!currentGalleryEventType) return;
-  api({action:'listPhotos', folderId:currentGalleryFolderId, eventType:currentGalleryEventType, resolution:'compressed'}).then(res=>{
-    if(res.success && res.folderUrl){
-      alert('Opening your web-resolution photos in Google Drive — click the download icon there to save all at once as a zip.');
-      window.open(res.folderUrl, '_blank');
-    }
+  runZipDownload(event ? event.currentTarget : document.querySelector('#galDownloadBar .dl-mini-btn'), {
+    action:'downloadZip', folderId:currentGalleryFolderId, eventType:currentGalleryEventType, resolution:'compressed'
   });
 }
 </script>
