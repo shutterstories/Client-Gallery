@@ -1902,8 +1902,20 @@ function runZipDownload(btn, payload){
   btn.innerHTML = '⏳ Preparing zip…';
 
   api(payload).then(res=>{
-    if(res.success && res.downloadUrl){
-      window.location.href = res.downloadUrl;
+    if(res.success && res.base64){
+      const byteChars = atob(res.base64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: res.mimeType || 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.fileName || 'photos.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(()=> URL.revokeObjectURL(url), 5000);
     } else {
       alert(res.error || 'Could not prepare the zip. Please try again in a moment.');
     }
