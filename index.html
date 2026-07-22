@@ -3,12 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shutter Stories — Client Gallery</title>
+<title>Shutter Stories — Wedding &amp; Event Photography in Mangalore</title>
+<meta name="description" content="Shutter Stories is a wedding and event photography &amp; videography studio based in Mangalore, Karnataka, serving clients across India. View our portfolio of weddings, engagements, pre-weddings, maternity and birthday shoots.">
+<link rel="canonical" href="https://shutterstories.github.io/Client-Gallery/">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%230A1B33'/%3E%3Ctext x='50' y='66' font-family='Georgia,serif' font-size='52' font-weight='600' fill='%23C6A15B' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
 <meta property="og:title" content="Shutter Stories — Wedding &amp; Event Photography">
-<meta property="og:description" content="View our portfolio of wedding and event photography.">
+<meta property="og:description" content="View our portfolio of wedding and event photography based in Mangalore, Karnataka.">
 <meta property="og:image" content="https://shutterstories.github.io/Client-Gallery/portfolio-cover.jpg">
 <meta property="og:url" content="https://shutterstories.github.io/Client-Gallery/">
+<meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Photographer",
+  "name": "Shutter Stories",
+  "image": "https://shutterstories.github.io/Client-Gallery/portfolio-cover.jpg",
+  "url": "https://shutterstories.github.io/Client-Gallery/",
+  "telephone": "+91-99640-52479",
+  "email": "shutterstories@gmail.com",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Mangalore",
+    "addressRegion": "Karnataka",
+    "addressCountry": "IN"
+  },
+  "areaServed": "India",
+  "sameAs": [
+    "https://www.instagram.com/shutter_stories__"
+  ],
+  "priceRange": "$$"
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -190,11 +216,12 @@
   .progress-text{font-size:12px; color:var(--ink-soft); margin-bottom:14px;}
 
   .admin-photo-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px;}
-  .admin-photo-tile{position:relative; aspect-ratio:1/1; background:var(--line); border-radius:3px; overflow:hidden; cursor:grab;}
-  .admin-photo-tile img{width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;}
+  .admin-photo-tile{position:relative; aspect-ratio:1/1; background:var(--line); border-radius:3px; overflow:hidden; cursor:grab; transition:outline-color .12s ease;}
+  .admin-photo-tile img{width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; transition:transform .12s ease;}
   .admin-photo-tile .tile-actions{position:absolute; inset:0; background:rgba(10,27,51,0); opacity:0; transition:.2s; display:flex; align-items:center; justify-content:center; gap:6px; pointer-events:none;}
   .admin-photo-tile:hover .tile-actions{background:rgba(10,27,51,0.45); opacity:1; pointer-events:auto;}
   .admin-photo-tile.selected{outline:3px solid var(--gold); outline-offset:-3px;}
+  .admin-photo-tile.selected img{transform:scale(.92);}
   .admin-photo-tile.drag-over{outline:3px dashed var(--navy); outline-offset:-3px;}
   .admin-photo-tile.pending{cursor:default;}
   .admin-photo-tile.pending img{opacity:.45;}
@@ -1325,12 +1352,38 @@ function toggleSelect(id, event){
   event.stopPropagation();
   if(selectedPhotoIds.has(id)) selectedPhotoIds.delete(id);
   else selectedPhotoIds.add(id);
-  renderAdminPhotoGrid();
+  updateTileSelectionUI(id);
+  updateSelectionBar();
+}
+
+function updateTileSelectionUI(id){
+  // Only flips the checkmark/border on the one tile that changed —
+  // never touches the <img> element, so nothing re-decodes or flashes blank.
+  const tile = document.getElementById('tile-' + id);
+  if(!tile) return;
+  const isSelected = selectedPhotoIds.has(id);
+  tile.classList.toggle('selected', isSelected);
+  const checkbox = tile.querySelector('.select-checkbox');
+  if(checkbox) checkbox.textContent = isSelected ? '✓' : '';
+}
+
+function updateSelectionBar(){
+  const bar = document.getElementById('selectionBar');
+  if(selectedPhotoIds.size > 0){
+    bar.style.display = 'flex';
+    document.getElementById('selectionCount').textContent = selectedPhotoIds.size + ' selected';
+    const select = document.getElementById('moveToEventSelect');
+    select.innerHTML = currentManagedEvents.filter(ev=>ev!==currentManagedEventType).map(ev=>`<option value="${ev}">${ev}</option>`).join('');
+  } else {
+    bar.style.display = 'none';
+  }
 }
 
 function clearSelection(){
+  const previouslySelected = [...selectedPhotoIds];
   selectedPhotoIds = new Set();
-  renderAdminPhotoGrid();
+  previouslySelected.forEach(id => updateTileSelectionUI(id));
+  updateSelectionBar();
 }
 
 function saveNewOrder(){
@@ -1374,15 +1427,7 @@ function moveSelectedToEnd(){
 
 function renderAdminPhotoGrid(){
   const grid = document.getElementById('adminPhotoGrid');
-  const bar = document.getElementById('selectionBar');
-  if(selectedPhotoIds.size > 0){
-    bar.style.display = 'flex';
-    document.getElementById('selectionCount').textContent = selectedPhotoIds.size + ' selected';
-    const select = document.getElementById('moveToEventSelect');
-    select.innerHTML = currentManagedEvents.filter(ev=>ev!==currentManagedEventType).map(ev=>`<option value="${ev}">${ev}</option>`).join('');
-  } else {
-    bar.style.display = 'none';
-  }
+  updateSelectionBar();
 
   const pendingHtml = pendingUploadTiles.map(t => `
     <div class="admin-photo-tile pending">
@@ -1392,6 +1437,7 @@ function renderAdminPhotoGrid(){
 
   grid.innerHTML = pendingHtml + currentAdminPhotos.map((p,i) => `
     <div class="admin-photo-tile ${selectedPhotoIds.has(p.id)?'selected':''}"
+         id="tile-${p.id}"
          draggable="true"
          data-index="${i}"
          onclick="toggleSelect('${p.id}', event)"
