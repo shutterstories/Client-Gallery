@@ -484,16 +484,6 @@
           <button class="btn primary" onclick="createCollection()" style="width:100%; justify-content:center;">+ Create Collection</button>
         </div>
       </div>
-      <div class="form-row">
-        <div>
-          <label>CLIENT EMAIL (for review requests)</label>
-          <input id="newClientEmail" type="email" placeholder="e.g. client@email.com">
-        </div>
-        <div>
-          <label>CLIENT PHONE (optional)</label>
-          <input id="newClientPhone" placeholder="e.g. 98xxxxxxxx">
-        </div>
-      </div>
       <div class="form-row full">
         <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
           <input type="checkbox" id="newIsPublic" style="width:auto;">
@@ -516,50 +506,6 @@
       </div>
       <div class="center-msg" style="font-size:11px; margin-bottom:16px; text-align:left;">
         📎 This link automatically shows the cover photo and client name when shared on WhatsApp — make sure you've set a cover photo (★ icon on a photo below) first.
-      </div>
-
-      <div class="card" style="background:var(--paper);">
-        <h3 style="font-size:16px;">Client Details & Booking</h3>
-        <div class="form-row">
-          <div>
-            <label>STATUS</label>
-            <select id="cmStatus"></select>
-          </div>
-          <div>
-            <label>DELIVERED DATE</label>
-            <div id="cmDeliveredDate" style="font-size:12px; color:var(--ink-soft); padding:10px 0;">—</div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div>
-            <label>CLIENT EMAIL</label>
-            <input id="cmClientEmail" type="email" placeholder="e.g. client@email.com">
-          </div>
-          <div>
-            <label>CLIENT PHONE</label>
-            <input id="cmClientPhone" placeholder="e.g. 98xxxxxxxx">
-          </div>
-        </div>
-        <div class="form-row">
-          <div>
-            <label>TOTAL AMOUNT (₹)</label>
-            <input id="cmTotalAmount" type="number" placeholder="e.g. 120000" oninput="updateBalanceDisplay()">
-          </div>
-          <div>
-            <label>ADVANCE PAID (₹)</label>
-            <input id="cmAdvancePaid" type="number" placeholder="e.g. 40000" oninput="updateBalanceDisplay()">
-          </div>
-        </div>
-        <div class="form-row full">
-          <label>BALANCE DUE</label>
-          <div id="cmBalanceDue" style="font-size:15px; font-weight:600; padding:6px 0;">₹0</div>
-        </div>
-        <div class="form-row full">
-          <label>NOTES</label>
-          <textarea id="cmNotes" rows="2" placeholder="Any internal notes about this booking…" style="width:100%; font-family:inherit; padding:10px; resize:vertical;"></textarea>
-        </div>
-        <button class="btn primary" onclick="saveClientDetails()" style="margin-top:6px;">Save Client Details</button>
-        <div class="progress-text" id="cmSaveStatus"></div>
       </div>
 
       <div class="event-pill-row" id="eventPillRow"></div>
@@ -956,18 +902,31 @@ function buildPortfolioCards(collections){
   return { cards, films };
 }
 
+// Client categories are free-typed per collection/event, so the same category can end up
+// stored with slightly different spacing (e.g. "Pre-Wedding" vs "Pre - Wedding"). This
+// normalizes just for grouping/matching in the filter bar — the underlying stored category
+// and event-scope values are left completely untouched everywhere else.
+function normalizeCat(str){
+  return String(str||'').trim().replace(/\s*-\s*/g, '-').replace(/\s+/g, ' ');
+}
+
 function buildHomeCatFilter(cards){
   const bar = document.getElementById('homeCatFilter');
-  const cats = [...new Set(cards.map(c=>c.category).filter(Boolean))];
+  const seen = new Map(); // normalized key -> display label (first original spelling seen)
+  cards.forEach(c=>{
+    if(!c.category) return;
+    const key = normalizeCat(c.category);
+    if(!seen.has(key)) seen.set(key, c.category.trim());
+  });
   bar.innerHTML = '<button class="active" data-cat="all">All</button>' +
-    cats.map(cat => `<button data-cat="${cat}">${cat}</button>`).join('');
+    [...seen.entries()].map(([key,label]) => `<button data-cat="${key}">${label}</button>`).join('');
 }
 
 function renderHomeGrid(cards, filter){
   const grid = document.getElementById('homeGrid');
   const filtered = filter==='all'
     ? cards.filter(c => !c.excludeFromAll)
-    : cards.filter(c => c.category===filter);
+    : cards.filter(c => normalizeCat(c.category)===filter);
   if(filtered.length===0){ grid.innerHTML = '<div class="center-msg">No portfolio pieces published yet.</div>'; return; }
   grid.innerHTML = filtered.map((c,i) => {
     const href = c.eventScope
@@ -1063,23 +1022,6 @@ function logout(){
 }
 
 /* ================= ADMIN DASHBOARD ================= */
-const STATUS_OPTIONS = ['Booked','Shoot Completed','Editing','Ready for Selection','Delivered'];
-function statusColor(status){
-  switch(status){
-    case 'Booked': return '#7A8B99';
-    case 'Shoot Completed': return '#8A7B5C';
-    case 'Editing': return '#B08B2E';
-    case 'Ready for Selection': return '#4A7A63';
-    case 'Delivered': return '#2E7D4F';
-    default: return '#7A8B99';
-  }
-}
-function balanceDue(c){
-  const total = parseFloat(c.totalAmount) || 0;
-  const paid = parseFloat(c.advancePaid) || 0;
-  return Math.max(0, total - paid);
-}
-
 function loadAdminCollections(){
   const list = document.getElementById('adminCollectionList');
   list.innerHTML = '<div class="center-msg">Loading…</div>';
@@ -1100,10 +1042,6 @@ function loadAdminCollections(){
           <div>
             <div class="name">${c.clientName} ${c.isPublic ? '<span style="font-size:10px; color:var(--gold); letter-spacing:1px;">● PORTFOLIO</span>' : ''}</div>
             <div class="meta">${c.category} · ${c.eventDate}</div>
-            <div style="margin-top:4px; display:flex; gap:6px; flex-wrap:wrap;">
-              <span style="font-size:10px; padding:2px 8px; border-radius:10px; background:${statusColor(c.status)}; color:#fff; letter-spacing:0.5px;">${c.status || 'Booked'}</span>
-              ${balanceDue(c) > 0 ? `<span style="font-size:10px; padding:2px 8px; border-radius:10px; background:#B23B3B; color:#fff;">₹${balanceDue(c).toLocaleString('en-IN')} due</span>` : ''}
-            </div>
           </div>
         </div>
         <div class="row-actions">
@@ -1152,16 +1090,12 @@ function createCollection(){
   const eventDate = document.getElementById('newEventDate').value;
   const category = document.getElementById('newCategory').value;
   const isPublic = document.getElementById('newIsPublic').checked;
-  const clientEmail = document.getElementById('newClientEmail').value.trim();
-  const clientPhone = document.getElementById('newClientPhone').value.trim();
   if(!clientName || !eventDate){ alert('Please enter client name and date.'); return; }
-  api({action:'createCollection', password:adminPassword, clientName, eventDate, category, isPublic, clientEmail, clientPhone}).then(res=>{
+  api({action:'createCollection', password:adminPassword, clientName, eventDate, category, isPublic}).then(res=>{
     if(res.success){
       document.getElementById('newClientName').value='';
       document.getElementById('newEventDate').value='';
       document.getElementById('newIsPublic').checked=false;
-      document.getElementById('newClientEmail').value='';
-      document.getElementById('newClientPhone').value='';
       loadAdminCollections();
     } else {
       alert('Error: ' + (res.error||'could not create'));
@@ -1177,9 +1111,6 @@ function openManager(folderId, clientName, eventDate){
   document.getElementById('cmLink').textContent = link;
   document.getElementById('collectionManager').dataset.link = link;
 
-  const statusSelect = document.getElementById('cmStatus');
-  statusSelect.innerHTML = STATUS_OPTIONS.map(s => `<option value="${s}">${s}</option>`).join('');
-
   api({action:'getCollectionMeta', folderId}).then(res=>{
     currentManagedEvents = res.events.map(e=>e.name);
     currentManagedEventType = currentManagedEvents[0] || null;
@@ -1188,52 +1119,6 @@ function openManager(folderId, clientName, eventDate){
     renderEventPills();
     loadAdminPhotos();
     renderVideoList(res.videos || []);
-
-    statusSelect.value = res.status || 'Booked';
-    document.getElementById('cmClientEmail').value = res.clientEmail || '';
-    document.getElementById('cmClientPhone').value = res.clientPhone || '';
-    document.getElementById('cmTotalAmount').value = res.totalAmount || '';
-    document.getElementById('cmAdvancePaid').value = res.advancePaid || '';
-    document.getElementById('cmNotes').value = res.notes || '';
-    document.getElementById('cmDeliveredDate').textContent = res.deliveredDate
-      ? new Date(res.deliveredDate).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) +
-        (res.reviewRequested ? ' · review requested ✓' : ' · review request pending')
-      : '— (auto-fills when status is set to Delivered)';
-    updateBalanceDisplay();
-  });
-}
-
-function updateBalanceDisplay(){
-  const total = parseFloat(document.getElementById('cmTotalAmount').value) || 0;
-  const paid = parseFloat(document.getElementById('cmAdvancePaid').value) || 0;
-  const balance = Math.max(0, total - paid);
-  document.getElementById('cmBalanceDue').textContent = '₹' + balance.toLocaleString('en-IN');
-  document.getElementById('cmBalanceDue').style.color = balance > 0 ? '#B23B3B' : '#2E7D4F';
-}
-
-function saveClientDetails(){
-  const status = document.getElementById('cmStatus').value;
-  const clientEmail = document.getElementById('cmClientEmail').value.trim();
-  const clientPhone = document.getElementById('cmClientPhone').value.trim();
-  const totalAmount = document.getElementById('cmTotalAmount').value;
-  const advancePaid = document.getElementById('cmAdvancePaid').value;
-  const notes = document.getElementById('cmNotes').value;
-  const statusEl = document.getElementById('cmSaveStatus');
-
-  statusEl.textContent = 'Saving…';
-  api({
-    action: 'updateClientMeta',
-    password: adminPassword,
-    folderId: currentManagedFolderId,
-    status, clientEmail, clientPhone, totalAmount, advancePaid, notes
-  }).then(res=>{
-    if(res.success){
-      statusEl.textContent = 'Saved ✓';
-      loadAdminCollections();
-      setTimeout(()=> statusEl.textContent = '', 2000);
-    } else {
-      statusEl.textContent = 'Error: ' + (res.error || 'could not save');
-    }
   });
 }
 
